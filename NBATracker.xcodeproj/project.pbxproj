@@ -1,0 +1,500 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BF000001000000000000000A /* NBATrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000001000000000000000A /* NBATrackerApp.swift */; };
+		BF000002000000000000000A /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000002000000000000000A /* Config.swift */; };
+		BF000003000000000000000A /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000003000000000000000A /* Team.swift */; };
+		BF000004000000000000000A /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000004000000000000000A /* Player.swift */; };
+		BF000005000000000000000A /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000005000000000000000A /* Game.swift */; };
+		BF000006000000000000000A /* Injury.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000006000000000000000A /* Injury.swift */; };
+		BF000007000000000000000A /* NBAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000007000000000000000A /* NBAService.swift */; };
+		BF000008000000000000000A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000008000000000000000A /* MainTabView.swift */; };
+		BF000009000000000000000A /* ScoreboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000009000000000000000A /* ScoreboardView.swift */; };
+		BF000010000000000000000A /* GameCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000010000000000000000A /* GameCard.swift */; };
+		BF000011000000000000000A /* StandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000011000000000000000A /* StandingsView.swift */; };
+		BF000012000000000000000A /* StandingRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000012000000000000000A /* StandingRow.swift */; };
+		BF000013000000000000000A /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000013000000000000000A /* TeamsView.swift */; };
+		BF000014000000000000000A /* TeamDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000014000000000000000A /* TeamDetailView.swift */; };
+		BF000015000000000000000A /* PlayersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000015000000000000000A /* PlayersView.swift */; };
+		BF000016000000000000000A /* PlayerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000016000000000000000A /* PlayerCard.swift */; };
+		BF000017000000000000000A /* PlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000017000000000000000A /* PlayerDetailView.swift */; };
+		BF000018000000000000000A /* PlayoffsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000018000000000000000A /* PlayoffsView.swift */; };
+		BF000019000000000000000A /* TeamLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000019000000000000000A /* TeamLogoView.swift */; };
+		BF000020000000000000000A /* StatBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000020000000000000000A /* StatBadge.swift */; };
+		BF000021000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF000021000000000000000A /* Assets.xcassets */; };
+		BF000022000000000000000A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF000022000000000000000A /* Preview Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AF000000000000000000000A /* NBATracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NBATracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF000001000000000000000A /* NBATrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NBATrackerApp.swift; sourceTree = "<group>"; };
+		AF000002000000000000000A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		AF000003000000000000000A /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
+		AF000004000000000000000A /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
+		AF000005000000000000000A /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
+		AF000006000000000000000A /* Injury.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Injury.swift; sourceTree = "<group>"; };
+		AF000007000000000000000A /* NBAService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NBAService.swift; sourceTree = "<group>"; };
+		AF000008000000000000000A /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		AF000009000000000000000A /* ScoreboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreboardView.swift; sourceTree = "<group>"; };
+		AF000010000000000000000A /* GameCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCard.swift; sourceTree = "<group>"; };
+		AF000011000000000000000A /* StandingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsView.swift; sourceTree = "<group>"; };
+		AF000012000000000000000A /* StandingRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingRow.swift; sourceTree = "<group>"; };
+		AF000013000000000000000A /* TeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsView.swift; sourceTree = "<group>"; };
+		AF000014000000000000000A /* TeamDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamDetailView.swift; sourceTree = "<group>"; };
+		AF000015000000000000000A /* PlayersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayersView.swift; sourceTree = "<group>"; };
+		AF000016000000000000000A /* PlayerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCard.swift; sourceTree = "<group>"; };
+		AF000017000000000000000A /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
+		AF000018000000000000000A /* PlayoffsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayoffsView.swift; sourceTree = "<group>"; };
+		AF000019000000000000000A /* TeamLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamLogoView.swift; sourceTree = "<group>"; };
+		AF000020000000000000000A /* StatBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatBadge.swift; sourceTree = "<group>"; };
+		AF000021000000000000000A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AF000022000000000000000A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CF000001000000000000000A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CF000010000000000000000A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AF000000000000000000000A /* NBATracker.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CF000011000000000000000A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AF000003000000000000000A /* Team.swift */,
+				AF000004000000000000000A /* Player.swift */,
+				AF000005000000000000000A /* Game.swift */,
+				AF000006000000000000000A /* Injury.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CF000012000000000000000A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AF000007000000000000000A /* NBAService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		CF000013000000000000000A /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				AF000008000000000000000A /* MainTabView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		CF000014000000000000000A /* Scoreboard */ = {
+			isa = PBXGroup;
+			children = (
+				AF000009000000000000000A /* ScoreboardView.swift */,
+				AF000010000000000000000A /* GameCard.swift */,
+			);
+			path = Scoreboard;
+			sourceTree = "<group>";
+		};
+		CF000015000000000000000A /* Standings */ = {
+			isa = PBXGroup;
+			children = (
+				AF000011000000000000000A /* StandingsView.swift */,
+				AF000012000000000000000A /* StandingRow.swift */,
+			);
+			path = Standings;
+			sourceTree = "<group>";
+		};
+		CF000016000000000000000A /* Teams */ = {
+			isa = PBXGroup;
+			children = (
+				AF000013000000000000000A /* TeamsView.swift */,
+				AF000014000000000000000A /* TeamDetailView.swift */,
+			);
+			path = Teams;
+			sourceTree = "<group>";
+		};
+		CF000017000000000000000A /* Players */ = {
+			isa = PBXGroup;
+			children = (
+				AF000015000000000000000A /* PlayersView.swift */,
+				AF000016000000000000000A /* PlayerCard.swift */,
+				AF000017000000000000000A /* PlayerDetailView.swift */,
+			);
+			path = Players;
+			sourceTree = "<group>";
+		};
+		CF000018000000000000000A /* Playoffs */ = {
+			isa = PBXGroup;
+			children = (
+				AF000018000000000000000A /* PlayoffsView.swift */,
+			);
+			path = Playoffs;
+			sourceTree = "<group>";
+		};
+		CF000019000000000000000A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CF000013000000000000000A /* Main */,
+				CF000014000000000000000A /* Scoreboard */,
+				CF000015000000000000000A /* Standings */,
+				CF000016000000000000000A /* Teams */,
+				CF000017000000000000000A /* Players */,
+				CF000018000000000000000A /* Playoffs */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CF000020000000000000000A /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				AF000019000000000000000A /* TeamLogoView.swift */,
+				AF000020000000000000000A /* StatBadge.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		CF000021000000000000000A /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				AF000022000000000000000A /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		CF000022000000000000000A /* NBATracker */ = {
+			isa = PBXGroup;
+			children = (
+				AF000001000000000000000A /* NBATrackerApp.swift */,
+				AF000002000000000000000A /* Config.swift */,
+				CF000011000000000000000A /* Models */,
+				CF000012000000000000000A /* Services */,
+				CF000019000000000000000A /* Views */,
+				CF000020000000000000000A /* Components */,
+				AF000021000000000000000A /* Assets.xcassets */,
+				CF000021000000000000000A /* Preview Content */,
+			);
+			path = NBATracker;
+			sourceTree = "<group>";
+		};
+		CF000023000000000000000A = {
+			isa = PBXGroup;
+			children = (
+				CF000022000000000000000A /* NBATracker */,
+				CF000010000000000000000A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DF000001000000000000000A /* NBATracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF000002000000000000000A /* Build configuration list for PBXNativeTarget "NBATracker" */;
+			buildPhases = (
+				FF000001000000000000000A /* Sources */,
+				CF000001000000000000000A /* Frameworks */,
+				FF000002000000000000000A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NBATracker;
+			productName = NBATracker;
+			productReference = AF000000000000000000000A /* NBATracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DF000000000000000000000A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					DF000001000000000000000A = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = EF000001000000000000000A /* Build configuration list for PBXProject "NBATracker" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CF000023000000000000000A;
+			productRefGroup = CF000010000000000000000A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DF000001000000000000000A /* NBATracker */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FF000002000000000000000A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF000021000000000000000A /* Assets.xcassets in Resources */,
+				BF000022000000000000000A /* Preview Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FF000001000000000000000A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF000001000000000000000A /* NBATrackerApp.swift in Sources */,
+				BF000002000000000000000A /* Config.swift in Sources */,
+				BF000003000000000000000A /* Team.swift in Sources */,
+				BF000004000000000000000A /* Player.swift in Sources */,
+				BF000005000000000000000A /* Game.swift in Sources */,
+				BF000006000000000000000A /* Injury.swift in Sources */,
+				BF000007000000000000000A /* NBAService.swift in Sources */,
+				BF000008000000000000000A /* MainTabView.swift in Sources */,
+				BF000009000000000000000A /* ScoreboardView.swift in Sources */,
+				BF000010000000000000000A /* GameCard.swift in Sources */,
+				BF000011000000000000000A /* StandingsView.swift in Sources */,
+				BF000012000000000000000A /* StandingRow.swift in Sources */,
+				BF000013000000000000000A /* TeamsView.swift in Sources */,
+				BF000014000000000000000A /* TeamDetailView.swift in Sources */,
+				BF000015000000000000000A /* PlayersView.swift in Sources */,
+				BF000016000000000000000A /* PlayerCard.swift in Sources */,
+				BF000017000000000000000A /* PlayerDetailView.swift in Sources */,
+				BF000018000000000000000A /* PlayoffsView.swift in Sources */,
+				BF000019000000000000000A /* TeamLogoView.swift in Sources */,
+				BF000020000000000000000A /* StatBadge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		EE000001000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		EE000002000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EE000003000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity = "<dict><key>NSAllowsArbitraryLoads</key><true/></dict>";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nbatracker.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EE000004000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity = "<dict><key>NSAllowsArbitraryLoads</key><true/></dict>";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nbatracker.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		EF000001000000000000000A /* Build configuration list for PBXProject "NBATracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE000001000000000000000A /* Debug */,
+				EE000002000000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EF000002000000000000000A /* Build configuration list for PBXNativeTarget "NBATracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE000003000000000000000A /* Debug */,
+				EE000004000000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DF000000000000000000000A /* Project object */;
+}
