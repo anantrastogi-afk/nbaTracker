@@ -15,7 +15,7 @@ final class TeamDetailViewModel: ObservableObject {
         isLoading = true
         async let roster   = NBAService.shared.fetchRoster(teamId: team.id)
         async let allInj   = NBAService.shared.fetchInjuries()
-        async let articles = NBAService.shared.fetchTeamNews(teamId: team.id)
+        async let articles = NBAService.shared.fetchTeamNews(teamId: team.id, limit: 10)
         do {
             let (p, allI, n) = try await (roster, allInj, articles)
             players  = p.sorted { $0.fullName < $1.fullName }
@@ -42,11 +42,12 @@ struct TeamDetailView: View {
                         Group {
                             switch vm.selectedTab {
                             case 0: rosterSection
-                            case 1: injurySection
-                            default: newsSection
+                            default: injurySection
                             }
                         }
                         .animation(.easeInOut(duration: 0.2), value: vm.selectedTab)
+
+                        newsSection
                     }
                 }
             }
@@ -75,7 +76,6 @@ struct TeamDetailView: View {
         Picker("", selection: $vm.selectedTab) {
             Text("Roster").tag(0)
             Text("Injuries \(vm.injuries.isEmpty ? "" : "(\(vm.injuries.count))")").tag(1)
-            Text("News").tag(2)
         }
         .pickerStyle(.segmented).padding().background(Color.nbaBG)
     }
@@ -112,16 +112,28 @@ struct TeamDetailView: View {
     }
 
     private var newsSection: some View {
-        LazyVStack(spacing: 10) {
+        VStack(spacing: 0) {
+            SectionHeader(title: "\(vm.team.displayName) News")
+                .padding(.top, 24)
             if vm.news.isEmpty {
-                Text("No recent news").foregroundColor(.nbaSecondary).padding(.top, 40)
-            } else {
-                ForEach(vm.news, id: \.id) { article in
-                    ArticleRow(article: article).padding(.horizontal)
+                HStack(spacing: 10) {
+                    Image(systemName: "newspaper")
+                        .foregroundColor(.nbaSecondary)
+                    Text("No recent news")
+                        .foregroundColor(.nbaSecondary)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+            } else {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.news, id: \.id) { article in
+                        ArticleRow(article: article).padding(.horizontal)
+                    }
+                }
+                .padding(.top, 10)
+                .padding(.bottom, 20)
             }
         }
-        .padding(.top, 8)
     }
 }
 
