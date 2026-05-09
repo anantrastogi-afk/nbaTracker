@@ -5,17 +5,32 @@ struct TeamLogoView: View {
     let size: CGFloat
 
     var body: some View {
-        if let url = team.logoURL {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let img): img.resizable().scaledToFit()
-                default: fallback
+        // Always lead with the dark-variant URL built from abbreviation;
+        // it's designed for dark backgrounds and verified valid for all 30 teams.
+        AsyncImage(url: team.darkLogoURL) { phase in
+            switch phase {
+            case .success(let img):
+                img.resizable().scaledToFit()
+                    .frame(width: size, height: size)
+            case .failure:
+                // darkLogoURL failed — try the API-parsed URL as last resort
+                if let fallbackURL = team.logoURL {
+                    AsyncImage(url: fallbackURL) { retry in
+                        switch retry {
+                        case .success(let img):
+                            img.resizable().scaledToFit()
+                                .frame(width: size, height: size)
+                        default: fallback
+                        }
+                    }
+                } else {
+                    fallback
                 }
+            default:
+                fallback
             }
-            .frame(width: size, height: size)
-        } else {
-            fallback.frame(width: size, height: size)
         }
+        .frame(width: size, height: size)
     }
 
     private var fallback: some View {
@@ -25,6 +40,7 @@ struct TeamLogoView: View {
                 .font(.system(size: size * 0.3, weight: .bold))
                 .foregroundColor(.white)
         }
+        .frame(width: size, height: size)
     }
 }
 

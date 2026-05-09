@@ -29,7 +29,7 @@ struct Standing: Identifiable {
         let color   = teamDict["color"]          as? String ?? "1D428A"
         let alt     = teamDict["alternateColor"] as? String ?? ""
         let logos   = teamDict["logos"] as? [[String: Any]] ?? []
-        let logoURL = (logos.first?["href"] as? String).flatMap { URL(string: $0) }
+        let logoURL = Team.preferredLogo(from: logos).flatMap { URL(string: $0) }
         let team    = Team(id: id, abbreviation: abbr, displayName: name,
                            location: loc, name: nick, color: color,
                            alternateColor: alt, logoURL: logoURL)
