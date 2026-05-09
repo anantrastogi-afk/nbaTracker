@@ -80,34 +80,3 @@ struct ScoreboardView: View {
         .frame(maxWidth: .infinity).padding(.vertical, 40)
     }
 }
-
-struct ArticleRow: View {
-    let article: Article
-
-    var body: some View {
-        HStack(spacing: 12) {
-            if let url = article.imageURL {
-                AsyncImage(url: url) { phase in
-                    if case .success(let img) = phase { img.resizable().scaledToFill() }
-                    else { Color.nbaCard }
-                }
-                .frame(width: 80, height: 60)
-                .clipped()
-                .cornerRadius(8)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(article.headline)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                Text(article.timeAgo)
-                    .font(.caption2)
-                    .foregroundColor(.nbaSecondary)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.nbaCard)
-        .cornerRadius(12)
-    }
-}
