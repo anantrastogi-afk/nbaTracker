@@ -1,8 +1,40 @@
 import SwiftUI
 
+// MARK: - ViewModel
+
+@MainActor
+final class PlayerDetailViewModel: ObservableObject {
+    @Published var news: [Article] = []
+    @Published var isLoadingNews = true
+
+    let player: Player
+
+    init(player: Player) { self.player = player }
+
+    func load() async {
+        isLoadingNews = true
+        do {
+            news = try await NBAService.shared.fetchPlayerNews(
+                playerId: player.id,
+                playerName: player.fullName
+            )
+        } catch {}
+        isLoadingNews = false
+    }
+}
+
+// MARK: - View
+
 struct PlayerDetailView: View {
     let player: Player
     let team: Team?
+    @StateObject private var vm: PlayerDetailViewModel
+
+    init(player: Player, team: Team?) {
+        self.player = player
+        self.team   = team
+        _vm = StateObject(wrappedValue: PlayerDetailViewModel(player: player))
+    }
 
     var body: some View {
         ZStack {
@@ -12,13 +44,17 @@ struct PlayerDetailView: View {
                     profileHeader
                     infoGrid
                     if player.isInjured { injuryBanner }
+                    newsSection
                 }
                 .padding(.bottom, 30)
             }
         }
         .navigationTitle(player.fullName)
         .navigationBarTitleDisplayMode(.inline)
+        .task { await vm.load() }
     }
+
+    // MARK: - Profile header
 
     private var profileHeader: some View {
         ZStack {
@@ -43,6 +79,8 @@ struct PlayerDetailView: View {
             .padding(.vertical, 28)
         }
     }
+
+    // MARK: - Info grid
 
     private var infoGrid: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -73,6 +111,8 @@ struct PlayerDetailView: View {
         .background(Color.nbaCard)
     }
 
+    // MARK: - Injury banner
+
     private var injuryBanner: some View {
         HStack(spacing: 12) {
             Image(systemName: "cross.fill")
@@ -96,6 +136,53 @@ struct PlayerDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.nbaRed.opacity(0.3), lineWidth: 1))
         .padding(.horizontal)
     }
+
+    // MARK: - News / Recovery news
+
+    private var newsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionHeader(title: player.isInjured ? "Recovery News" : "Player News")
+                .padding(.horizontal)
+                .padding(.top, 4)
+
+            if vm.isLoadingNews {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Loading news…")
+                        .font(.subheadline)
+                        .foregroundColor(.nbaSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 28)
+
+            } else if vm.news.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: player.isInjured ? "bandage" : "newspaper")
+                        .font(.system(size: 32))
+                        .foregroundColor(.nbaSecondary)
+                    Text(player.isInjured
+                         ? "No recovery news found"
+                         : "No recent news found")
+                        .font(.subheadline)
+                        .foregroundColor(.nbaSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+
+            } else {
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.news, id: \.id) { article in
+                        ArticleRow(article: article)
+                            .padding(.horizontal)
+                    }
+                }
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+            }
+        }
+    }
+
+    // MARK: - Helpers
 
     private func badge(_ text: String, color: Color) -> some View {
         Text(text)

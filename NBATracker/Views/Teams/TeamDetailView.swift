@@ -120,7 +120,16 @@ struct TeamDetailView: View {
             } else {
                 LazyVStack(spacing: 10) {
                     ForEach(vm.injuries, id: \.id) { injury in
-                        InjuryRow(injury: injury).padding(.horizontal)
+                        // Match injury to roster player for navigation to recovery news
+                        if let player = vm.players.first(where: { $0.id == injury.athleteId }) {
+                            NavigationLink(destination: PlayerDetailView(player: player, team: vm.team)) {
+                                InjuryRow(injury: injury, isNavigable: true)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.horizontal)
+                        } else {
+                            InjuryRow(injury: injury).padding(.horizontal)
+                        }
                     }
                 }
                 .padding(.top, 8)
@@ -184,6 +193,8 @@ struct PlayerRow: View {
 
 struct InjuryRow: View {
     let injury: Injury
+    var isNavigable: Bool = false
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "cross.fill")
@@ -204,6 +215,16 @@ struct InjuryRow: View {
                     .background(injury.statusColor.opacity(0.15)).cornerRadius(6)
                 if !injury.date.isEmpty {
                     Text(injury.date).font(.caption2).foregroundColor(.nbaSecondary)
+                }
+                if isNavigable {
+                    HStack(spacing: 2) {
+                        Text("Recovery news")
+                            .font(.caption2)
+                            .foregroundColor(.nbaGold)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8))
+                            .foregroundColor(.nbaGold)
+                    }
                 }
             }
         }

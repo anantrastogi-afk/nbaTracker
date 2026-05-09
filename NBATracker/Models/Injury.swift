@@ -2,6 +2,7 @@ import SwiftUI
 
 struct Injury: Identifiable {
     let id: String
+    let athleteId: String
     let athleteName: String
     let teamName: String
     let status: String
@@ -29,13 +30,15 @@ struct Injury: Identifiable {
         let innerList = teamGroup["injuries"]    as? [[String: Any]] ?? []
         return innerList.compactMap { inj -> Injury? in
             guard let id = inj["id"] as? String else { return nil }
-            let athleteName   = (inj["athlete"] as? [String: Any])?["displayName"] as? String ?? "Unknown"
+            let athlete       = inj["athlete"] as? [String: Any] ?? [:]
+            let athleteId     = athlete["id"]          as? String ?? ""
+            let athleteName   = athlete["displayName"] as? String ?? "Unknown"
             let status        = inj["status"]       as? String ?? "Questionable"
             let shortComment  = inj["shortComment"] as? String ?? ""
             let longComment   = inj["longComment"]  as? String ?? ""
             let date          = inj["date"]         as? String ?? ""
-            return Injury(id: id, athleteName: athleteName, teamName: teamName,
-                          status: status, shortComment: shortComment,
+            return Injury(id: id, athleteId: athleteId, athleteName: athleteName,
+                          teamName: teamName, status: status, shortComment: shortComment,
                           longComment: longComment, date: date)
         }
     }

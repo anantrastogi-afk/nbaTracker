@@ -135,6 +135,37 @@ final class NBAService {
         return articles.compactMap { Article.from($0) }
     }
 
+    // Fetch news articles mentioning a specific player.
+    // Strategy: pull a wide pool of NBA news, keep articles where ESPN's
+    // athlete category ID matches the player OR the full name appears in headline.
+    func fetchPlayerNews(playerId: String, playerName: String) async throws -> [Article] {
+        let url      = ESPN.url("/news", params: ["limit": "60"])
+        let json     = try await fetch(url, ttl: 120)
+        let articles = json["articles"] as? [[String: Any]] ?? []
+
+        let playerIdInt  = Int(playerId)
+        let nameLower    = playerName.lowercased()
+
+        return articles.compactMap { dict -> Article? in
+            let cats = dict["categories"] as? [[String: Any]] ?? []
+
+            // Primary: exact athlete-ID tag set by ESPN editors
+            let hasAthleteTag = cats.contains { cat in
+                guard (cat["type"] as? String) == "athlete" else { return false }
+                let catId = cat["athleteId"] as? Int
+                         ?? (cat["athlete"] as? [String: Any])?["id"] as? Int
+                return catId == playerIdInt
+            }
+
+            // Secondary: player's full name mentioned in headline
+            let headline     = (dict["headline"]    as? String ?? "").lowercased()
+            let headlineMatch = headline.contains(nameLower)
+
+            guard hasAthleteTag || headlineMatch else { return nil }
+            return Article.from(dict)
+        }
+    }
+
     // MARK: - Playoff games (postseason filter from scoreboard history)
 
     func fetchPlayoffGames() async throws -> [Game] {
