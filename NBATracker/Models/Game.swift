@@ -1,93 +1,96 @@
 import Foundation
 
-struct Game: Codable, Identifiable {
-    let id: Int
-    let date: String
-    let datetime: String?
-    let homeTeamScore: Int
-    let visitorTeamScore: Int
-    let season: Int
-    let period: Int
-    let status: String
-    let time: String?
-    let postseason: Bool
-    let postponed: Bool?
-    let homeTeam: Team
-    let visitorTeam: Team
+struct Game: Identifiable {
+    let id: String
+    let date: Date
+    let homeTeam: GameCompetitor
+    let awayTeam: GameCompetitor
+    let status: GameStatus
+    let isPostseason: Bool
 
-    enum CodingKeys: String, CodingKey {
-        case id, date, datetime, season, period, status, time, postseason, postponed
-        case homeTeamScore    = "home_team_score"
-        case visitorTeamScore = "visitor_team_score"
-        case homeTeam         = "home_team"
-        case visitorTeam      = "visitor_team"
+    struct GameCompetitor {
+        let team: Team
+        let score: Int
+        let record: String
     }
 
-    var isFinal: Bool { status.lowercased() == "final" }
-    var isPostponed: Bool { postponed == true }
-    // Scheduled games have an ISO8601 datetime string in the status field
-    var isScheduled: Bool { status.contains("T") && status.contains(":") && !isFinal }
+    struct GameStatus {
+        let description: String  // "Scheduled", "In Progress", "Final"
+        let period: Int
+        let clock: String
 
-    var isLive: Bool {
-        guard !isFinal, !isPostponed, !isScheduled, period > 0 else { return false }
-        return true
-    }
+        var isFinal:     Bool { description.lowercased() == "final" }
+        var isLive:      Bool { description.lowercased().contains("progress") }
+        var isScheduled: Bool { !isFinal && !isLive }
 
-    var statusDisplay: String {
-        if isPostponed { return "PPD" }
-        if isFinal     { return "Final" }
-        if isLive, let t = time, !t.isEmpty { return "Q\(period) \(t)" }
-        if isLive      { return "Q\(period)" }
-        return formattedStartTime
-    }
-
-    var formattedStartTime: String {
-        // Use datetime field if available, fall back to status (which may be ISO8601)
-        let raw = datetime ?? (isScheduled ? status : nil)
-        guard let raw else { return status }
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = formatter.date(from: raw) {
-            let out = DateFormatter()
-            out.dateFormat = "h:mm a"
-            out.timeZone = TimeZone.current
-            return out.string(from: d)
+        var display: String {
+            if isFinal  { return "Final" }
+            if isLive   { return "Q\(period) \(clock)" }
+            return ""   // caller uses formatted date
         }
-        // Try without fractional seconds
-        formatter.formatOptions = [.withInternetDateTime]
-        if let d = formatter.date(from: raw) {
-            let out = DateFormatter()
-            out.dateFormat = "h:mm a"
-            out.timeZone = TimeZone.current
-            return out.string(from: d)
+    }
+
+    var formattedTime: String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        f.timeZone = TimeZone.current
+        return f.string(from: date)
+    }
+
+    var formattedDate: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f.string(from: date)
+    }
+
+    // Parse from ESPN scoreboard event
+    static func from(_ event: [String: Any]) -> Game? {
+        guard let id   = event["id"] as? String,
+              let dateStr = event["date"] as? String,
+              let comps   = (event["competitions"] as? [[String: Any]])?.first
+        else { return nil }
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        guard let date = iso.date(from: dateStr) else { return nil }
+
+        let competitors = comps["competitors"] as? [[String: Any]] ?? []
+        guard let homeData = competitors.first(where: { ($0["homeAway"] as? String) == "home" }),
+              let awayData = competitors.first(where: { ($0["homeAway"] as? String) == "away" })
+        else { return nil }
+
+        func competitor(_ d: [String: Any]) -> GameCompetitor? {
+            guard let teamDict = d["team"] as? [String: Any] else { return nil }
+            let id    = teamDict["id"]           as? String ?? ""
+            let abbr  = teamDict["abbreviation"] as? String ?? ""
+            let name  = teamDict["displayName"]  as? String ?? ""
+            let loc   = teamDict["location"]     as? String ?? ""
+            let nick  = teamDict["name"]         as? String ?? ""
+            let color = teamDict["color"]        as? String ?? "1D428A"
+            let alt   = teamDict["alternateColor"] as? String ?? ""
+            let logo  = (teamDict["logo"] as? String).flatMap { URL(string: $0) }
+            let team  = Team(id: id, abbreviation: abbr, displayName: name,
+                             location: loc, name: nick, color: color,
+                             alternateColor: alt, logoURL: logo)
+            let score  = Int(d["score"] as? String ?? "0") ?? 0
+            let records = d["records"] as? [[String: Any]] ?? []
+            let record  = records.first(where: { ($0["type"] as? String) == "total" })?["summary"] as? String ?? ""
+            return GameCompetitor(team: team, score: score, record: record)
         }
-        return status
+
+        guard let home = competitor(homeData), let away = competitor(awayData) else { return nil }
+
+        let statusDict = comps["status"] as? [String: Any] ?? [:]
+        let typeDict   = statusDict["type"] as? [String: Any] ?? [:]
+        let desc   = typeDict["description"]  as? String ?? "Scheduled"
+        let period = statusDict["period"]     as? Int    ?? 0
+        let clock  = statusDict["displayClock"] as? String ?? ""
+        let status = GameStatus(description: desc, period: period, clock: clock)
+
+        let seasonType = (event["season"] as? [String: Any])?["type"] as? Int ?? 2
+        let isPost = seasonType == 3
+
+        return Game(id: id, date: date, homeTeam: home, awayTeam: away,
+                    status: status, isPostseason: isPost)
     }
-}
-
-struct GamesResponse: Codable {
-    let data: [Game]
-    let meta: CursorMeta
-}
-
-struct CursorMeta: Codable {
-    let nextCursor: Int?
-    let perPage: Int
-
-    enum CodingKeys: String, CodingKey {
-        case nextCursor = "next_cursor"
-        case perPage    = "per_page"
-    }
-}
-
-// Computed standing — built from game results, no paid API needed
-struct Standing: Identifiable {
-    let team: Team
-    var wins: Int
-    var losses: Int
-    var conferenceRank: Int = 0
-
-    var id: Int { team.id }
-    var winPct: Double { Double(wins) / Double(max(1, wins + losses)) }
-    var record: String { "\(wins)-\(losses)" }
 }

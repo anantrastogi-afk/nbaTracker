@@ -3,71 +3,22 @@ import SwiftUI
 @MainActor
 final class PlayoffsViewModel: ObservableObject {
     @Published var games: [Game] = []
+    @Published var news: [Article] = []
     @Published var isLoading = false
     @Published var error: String?
 
-    var rounds: [PlayoffRound] {
-        buildRounds(from: games)
-    }
-
+    // Group today's postseason games; fetch news for context
     func load() async {
-        isLoading = true
-        error = nil
-        do { games = try await NBAService.shared.fetchPlayoffGames() }
-        catch { self.error = error.localizedDescription }
+        isLoading = true; error = nil
+        async let g = NBAService.shared.fetchScoreboard()
+        async let n = NBAService.shared.fetchNews(limit: 5)
+        do {
+            let (all, articles) = try await (g, n)
+            games = all.filter { $0.isPostseason }
+            news  = articles
+        } catch { self.error = error.localizedDescription }
         isLoading = false
     }
-
-    private func buildRounds(from games: [Game]) -> [PlayoffRound] {
-        guard !games.isEmpty else { return [] }
-        // Group games by matchup pairs
-        var matchups: [String: [Game]] = [:]
-        for game in games {
-            let ids = [game.homeTeam.id, game.visitorTeam.id].sorted()
-            let key = "\(ids[0])-\(ids[1])"
-            matchups[key, default: []].append(game)
-        }
-        let series = matchups.values.map { PlayoffSeries(games: $0) }
-        // Simple round grouping by series count
-        let sorted = series.sorted { $0.startDate < $1.startDate }
-        var rounds: [PlayoffRound] = []
-        let roundNames = ["First Round", "Conference Semifinals", "Conference Finals", "NBA Finals"]
-        let chunkSizes = [8, 4, 2, 1]
-        var offset = 0
-        for (i, size) in chunkSizes.enumerated() {
-            let chunk = Array(sorted.dropFirst(offset).prefix(size))
-            if !chunk.isEmpty {
-                rounds.append(PlayoffRound(name: roundNames[i], series: chunk))
-            }
-            offset += size
-        }
-        return rounds
-    }
-}
-
-struct PlayoffRound: Identifiable {
-    let id = UUID()
-    let name: String
-    let series: [PlayoffSeries]
-}
-
-struct PlayoffSeries: Identifiable {
-    let id = UUID()
-    let games: [Game]
-
-    var homeTeam: Team  { games.first!.homeTeam }
-    var awayTeam: Team  { games.first!.visitorTeam }
-    var homeWins: Int   { games.filter { $0.homeTeamScore > $0.visitorTeamScore && $0.status.lowercased() == "final" }.count }
-    var awayWins: Int   { games.filter { $0.visitorTeamScore > $0.homeTeamScore && $0.status.lowercased() == "final" }.count }
-    var startDate: String { games.map(\.date).min() ?? "" }
-
-    var seriesScore: String { "\(awayWins)-\(homeWins)" }
-    var leader: Team? {
-        if homeWins > awayWins { return homeTeam }
-        if awayWins > homeWins { return awayTeam }
-        return nil
-    }
-    var isComplete: Bool { homeWins == 4 || awayWins == 4 }
 }
 
 struct PlayoffsView: View {
@@ -79,8 +30,7 @@ struct PlayoffsView: View {
                 Color.nbaBG.ignoresSafeArea()
                 if vm.isLoading { LoadingView() }
                 else if let err = vm.error { ErrorView(message: err, retry: { Task { await vm.load() } }) }
-                else if vm.rounds.isEmpty { offseasonView }
-                else { bracketContent }
+                else { content }
             }
             .navigationTitle("Playoffs")
             .navigationBarTitleDisplayMode(.large)
@@ -89,16 +39,27 @@ struct PlayoffsView: View {
         .refreshable { await vm.load() }
     }
 
-    private var bracketContent: some View {
+    private var content: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 playoffsBanner
-                ForEach(vm.rounds) { round in
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: round.name)
-                        ForEach(round.series) { series in
-                            SeriesCard(series: series)
-                                .padding(.horizontal)
+
+                if vm.games.isEmpty {
+                    noGamesView
+                } else {
+                    SectionHeader(title: "Today's Playoff Games")
+                    LazyVStack(spacing: 12) {
+                        ForEach(vm.games, id: \.id) { game in
+                            PlayoffGameCard(game: game).padding(.horizontal)
+                        }
+                    }
+                }
+
+                if !vm.news.isEmpty {
+                    SectionHeader(title: "Playoff News").padding(.top, 8)
+                    LazyVStack(spacing: 10) {
+                        ForEach(vm.news, id: \.id) { article in
+                            ArticleRow(article: article).padding(.horizontal)
                         }
                     }
                 }
@@ -110,7 +71,7 @@ struct PlayoffsView: View {
     private var playoffsBanner: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.nbaGold.opacity(0.3), Color.nbaRed.opacity(0.2)],
+                colors: [Color.nbaGold.opacity(0.35), Color.nbaRed.opacity(0.2)],
                 startPoint: .leading, endPoint: .trailing
             )
             HStack {
@@ -119,94 +80,89 @@ struct PlayoffsView: View {
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(.nbaGold)
                         .tracking(2)
-                    Text("2024-25 Season")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
+                    Text("2025-26 Season")
+                        .font(.subheadline).foregroundColor(.white.opacity(0.75))
                 }
                 Spacer()
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: 44))
-                    .foregroundColor(.nbaGold)
+                    .font(.system(size: 44)).foregroundColor(.nbaGold)
             }
             .padding(20)
         }
-        .cornerRadius(16)
-        .padding(.horizontal)
-        .padding(.top, 8)
+        .cornerRadius(16).padding(.horizontal).padding(.top, 8)
     }
 
-    private var offseasonView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "trophy.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.nbaGold.opacity(0.3))
-            Text("Playoffs Not Started")
-                .font(.title3.bold())
-                .foregroundColor(.white)
-            Text("Check back when the postseason begins")
+    private var noGamesView: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.system(size: 40)).foregroundColor(.nbaSecondary)
+            Text("No playoff games today")
+                .font(.headline).foregroundColor(.white)
+            Text("Check back on game days")
                 .foregroundColor(.nbaSecondary)
-                .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity).padding(.vertical, 40)
     }
 }
 
-struct SeriesCard: View {
-    let series: PlayoffSeries
+struct PlayoffGameCard: View {
+    let game: Game
 
     var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                seriesSide(team: series.awayTeam, wins: series.awayWins, isLeader: series.awayWins > series.homeWins)
-                VStack(spacing: 4) {
-                    Text(series.seriesScore)
-                        .font(.system(size: 24, weight: .black))
-                        .foregroundColor(.white)
-                    Text(series.isComplete ? "FINAL" : "SERIES")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundColor(series.isComplete ? .nbaGold : .nbaSecondary)
-                        .tracking(1)
-                    Text("\(series.games.count) games played")
-                        .font(.caption2)
-                        .foregroundColor(.nbaSecondary)
-                }
-                .frame(width: 90)
-                seriesSide(team: series.homeTeam, wins: series.homeWins, isLeader: series.homeWins > series.awayWins)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                teamSide(competitor: game.awayTeam, isWinner: awayWins)
+                centerSection
+                teamSide(competitor: game.homeTeam, isWinner: homeWins)
             }
-            if series.isComplete, let winner = series.leader {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundColor(.nbaGold)
-                    Text("\(winner.fullName) advance")
-                        .font(.caption.bold())
-                        .foregroundColor(.nbaGold)
-                }
-                .padding(.top, 4)
-            }
+            .padding(16)
         }
-        .padding(16)
         .background(Color.nbaCard)
         .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(series.isComplete ? Color.nbaGold.opacity(0.3) : Color.clear, lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(
+            game.status.isLive ? Color.nbaGold.opacity(0.6) : Color.nbaGold.opacity(0.15),
+            lineWidth: game.status.isLive ? 1.5 : 1
+        ))
     }
 
-    private func seriesSide(team: Team, wins: Int, isLeader: Bool) -> some View {
+    private func teamSide(competitor: Game.GameCompetitor, isWinner: Bool) -> some View {
         VStack(spacing: 8) {
-            TeamLogoView(team: team, size: 50)
-            Text(team.abbreviation)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(isLeader ? .white : .nbaSecondary)
-            HStack(spacing: 4) {
-                ForEach(0..<4) { i in
-                    Circle()
-                        .fill(i < wins ? Color.nbaGold : Color.white.opacity(0.1))
-                        .frame(width: 8, height: 8)
-                }
+            TeamLogoView(team: competitor.team, size: 56)
+            Text(competitor.team.abbreviation)
+                .font(.system(size: 14, weight: .bold)).foregroundColor(.white)
+            if game.status.isScheduled {
+                Text(competitor.record).font(.caption2).foregroundColor(.nbaSecondary)
+            } else {
+                Text("\(competitor.score)")
+                    .font(.system(size: 32, weight: .black))
+                    .foregroundColor(isWinner ? .white : .nbaSecondary)
             }
         }
         .frame(maxWidth: .infinity)
     }
+
+    private var centerSection: some View {
+        VStack(spacing: 6) {
+            if game.status.isLive {
+                HStack(spacing: 4) {
+                    Circle().fill(Color.nbaRed).frame(width: 7, height: 7)
+                    Text("LIVE").font(.system(size: 10, weight: .black)).foregroundColor(.nbaRed)
+                }
+            }
+            Text(game.status.isFinal ? "Final" : game.status.isLive ? game.status.display : game.formattedTime)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(game.status.isLive ? .nbaRed : .nbaSecondary)
+                .multilineTextAlignment(.center)
+            Text("PLAYOFFS")
+                .font(.system(size: 8, weight: .black))
+                .foregroundColor(.nbaGold).tracking(1)
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background(Color.nbaGold.opacity(0.15)).cornerRadius(4)
+            Text("@").font(.caption2).foregroundColor(.nbaSecondary)
+        }
+        .frame(width: 82)
+    }
+
+    private var homeWins: Bool { game.status.isFinal && game.homeTeam.score > game.awayTeam.score }
+    private var awayWins: Bool { game.status.isFinal && game.awayTeam.score > game.homeTeam.score }
 }

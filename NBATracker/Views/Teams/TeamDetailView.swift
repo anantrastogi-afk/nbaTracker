@@ -3,22 +3,24 @@ import SwiftUI
 @MainActor
 final class TeamDetailViewModel: ObservableObject {
     @Published var players: [Player] = []
-    @Published var recentGames: [Game] = []
+    @Published var injuries: [Injury] = []
+    @Published var news: [Article] = []
     @Published var isLoading = false
     @Published var selectedTab = 0
-
     let team: Team
 
     init(team: Team) { self.team = team }
 
     func load() async {
         isLoading = true
-        async let playersRes = NBAService.shared.fetchPlayers(teamId: team.id)
-        async let gamesRes   = NBAService.shared.fetchRecentGames(teamId: team.id)
+        async let roster   = NBAService.shared.fetchRoster(teamId: team.id)
+        async let allInj   = NBAService.shared.fetchInjuries()
+        async let articles = NBAService.shared.fetchTeamNews(teamId: team.id)
         do {
-            let (p, g) = try await (playersRes, gamesRes)
-            players     = p.data.sorted { $0.lastName < $1.lastName }
-            recentGames = g
+            let (p, allI, n) = try await (roster, allInj, articles)
+            players  = p.sorted { $0.fullName < $1.fullName }
+            injuries = allI.filter { $0.teamName == team.displayName }
+            news     = n
         } catch { }
         isLoading = false
     }
@@ -35,94 +37,84 @@ struct TeamDetailView: View {
                 VStack(spacing: 0) {
                     teamHeader
                     tabPicker
-                    switch vm.selectedTab {
-                    case 0: rosterSection
-                    case 1: recentGamesSection
-                    default: injurySection
+                    if vm.isLoading { LoadingView().frame(height: 200) }
+                    else {
+                        switch vm.selectedTab {
+                        case 0: rosterSection
+                        case 1: injurySection
+                        default: newsSection
+                        }
                     }
                 }
             }
         }
-        .navigationTitle(vm.team.fullName)
+        .navigationTitle(vm.team.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.load() }
     }
 
     private var teamHeader: some View {
         ZStack {
-            Color(hex: vm.team.primaryColor).opacity(0.15)
+            LinearGradient(
+                colors: [Color(hex: vm.team.color).opacity(0.4), Color.nbaBG],
+                startPoint: .top, endPoint: .bottom
+            )
             VStack(spacing: 12) {
                 TeamLogoView(team: vm.team, size: 90)
-                Text(vm.team.fullName)
-                    .font(.title2.bold())
-                    .foregroundColor(.white)
-                HStack(spacing: 20) {
-                    Label(vm.team.conference, systemImage: "map")
-                    Label(vm.team.division, systemImage: "square.grid.2x2")
-                }
-                .font(.caption)
-                .foregroundColor(.nbaSecondary)
+                Text(vm.team.displayName)
+                    .font(.title2.bold()).foregroundColor(.white)
             }
-            .padding(.vertical, 24)
+            .padding(.vertical, 28)
         }
     }
 
     private var tabPicker: some View {
         Picker("", selection: $vm.selectedTab) {
             Text("Roster").tag(0)
-            Text("Recent Games").tag(1)
-            Text("Injuries").tag(2)
+            Text("Injuries \(vm.injuries.isEmpty ? "" : "(\(vm.injuries.count))")").tag(1)
+            Text("News").tag(2)
         }
-        .pickerStyle(.segmented)
-        .padding()
-        .background(Color.nbaBG)
+        .pickerStyle(.segmented).padding().background(Color.nbaBG)
     }
 
     private var rosterSection: some View {
-        Group {
-            if vm.isLoading { LoadingView().frame(height: 300) }
-            else {
-                LazyVStack(spacing: 1) {
-                    ForEach(vm.players) { player in
-                        NavigationLink(destination: PlayerDetailView(player: player)) {
-                            PlayerRow(player: player)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
+        LazyVStack(spacing: 1) {
+            ForEach(vm.players, id: \.id) { player in
+                NavigationLink(destination: PlayerDetailView(player: player, team: vm.team)) {
+                    PlayerRow(player: player)
                 }
-                .background(Color.nbaCard)
-                .cornerRadius(16)
-                .padding(.horizontal)
+                .buttonStyle(PlainButtonStyle())
             }
         }
-    }
-
-    private var recentGamesSection: some View {
-        LazyVStack(spacing: 12) {
-            ForEach(vm.recentGames) { game in
-                GameCard(game: game).padding(.horizontal)
-            }
-        }
-        .padding(.top, 8)
+        .background(Color.nbaCard).cornerRadius(16).padding(.horizontal).padding(.top, 8)
     }
 
     private var injurySection: some View {
-        let teamInjuries = Injury.mockData.filter { $0.team == vm.team.abbreviation }
-        return LazyVStack(spacing: 10) {
-            if teamInjuries.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.green)
-                    Text("No reported injuries")
-                        .foregroundColor(.nbaSecondary)
+        Group {
+            if vm.injuries.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.shield.fill").font(.system(size: 40)).foregroundColor(.green)
+                    Text("No reported injuries").foregroundColor(.nbaSecondary)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 60)
+                .frame(maxWidth: .infinity).padding(.top, 60)
             } else {
-                ForEach(teamInjuries) { injury in
-                    InjuryRow(injury: injury)
-                        .padding(.horizontal)
+                LazyVStack(spacing: 10) {
+                    ForEach(vm.injuries, id: \.id) { injury in
+                        InjuryRow(injury: injury).padding(.horizontal)
+                    }
+                }
+                .padding(.top, 8)
+            }
+        }
+    }
+
+    private var newsSection: some View {
+        LazyVStack(spacing: 10) {
+            if vm.news.isEmpty {
+                Text("No recent news").foregroundColor(.nbaSecondary).padding(.top, 40)
+            } else {
+                ForEach(vm.news, id: \.id) { article in
+                    ArticleRow(article: article).padding(.horizontal)
                 }
             }
         }
@@ -132,79 +124,57 @@ struct TeamDetailView: View {
 
 struct PlayerRow: View {
     let player: Player
-
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.nbaGold.opacity(0.2))
-                    .frame(width: 40, height: 40)
-                Text(player.initials)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.nbaGold)
-            }
+        HStack(spacing: 12) {
+            PlayerHeadshotView(player: player, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text(player.fullName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
                 HStack(spacing: 8) {
-                    if let jersey = player.jerseyNumber {
-                        Text("#\(jersey)")
-                            .font(.caption2)
-                            .foregroundColor(.nbaSecondary)
+                    Text("#\(player.jersey)").font(.caption2).foregroundColor(.nbaSecondary)
+                    Text(player.position).font(.caption2).foregroundColor(.nbaSecondary)
+                    if player.isInjured {
+                        Text(player.injuryStatus ?? "")
+                            .font(.caption2.bold())
+                            .foregroundColor(.nbaRed)
+                            .padding(.horizontal, 5).padding(.vertical, 2)
+                            .background(Color.nbaRed.opacity(0.15))
+                            .cornerRadius(4)
                     }
-                    Text(player.positionDisplay)
-                        .font(.caption2)
-                        .foregroundColor(.nbaSecondary)
                 }
             }
             Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundColor(.nbaSecondary)
+            Image(systemName: "chevron.right").font(.caption2).foregroundColor(.nbaSecondary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color.nbaCard)
+        .padding(.horizontal, 14).padding(.vertical, 10).background(Color.nbaCard)
     }
 }
 
 struct InjuryRow: View {
     let injury: Injury
-
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: "cross.fill")
-                .font(.system(size: 16))
-                .foregroundColor(Color(hex: injury.status.color))
+                .font(.system(size: 14))
+                .foregroundColor(injury.statusColor)
                 .frame(width: 32, height: 32)
-                .background(Color(hex: injury.status.color).opacity(0.15))
+                .background(injury.statusColor.opacity(0.15))
                 .clipShape(Circle())
-
             VStack(alignment: .leading, spacing: 3) {
-                Text(injury.playerName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
-                Text(injury.description)
-                    .font(.caption)
-                    .foregroundColor(.nbaSecondary)
+                Text(injury.athleteName).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                Text(injury.displayComment).font(.caption).foregroundColor(.nbaSecondary).lineLimit(2)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 3) {
-                Text(injury.status.rawValue)
-                    .font(.caption.bold())
-                    .foregroundColor(Color(hex: injury.status.color))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color(hex: injury.status.color).opacity(0.15))
-                    .cornerRadius(6)
-                Text(injury.updatedDate)
-                    .font(.caption2)
-                    .foregroundColor(.nbaSecondary)
+                Text(injury.status)
+                    .font(.caption.bold()).foregroundColor(injury.statusColor)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(injury.statusColor.opacity(0.15)).cornerRadius(6)
+                if !injury.date.isEmpty {
+                    Text(injury.date).font(.caption2).foregroundColor(.nbaSecondary)
+                }
             }
         }
-        .padding(14)
-        .background(Color.nbaCard)
-        .cornerRadius(14)
+        .padding(14).background(Color.nbaCard).cornerRadius(14)
     }
 }

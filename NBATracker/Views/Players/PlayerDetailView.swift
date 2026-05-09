@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlayerDetailView: View {
     let player: Player
+    let team: Team?
 
     var body: some View {
         ZStack {
@@ -9,8 +10,8 @@ struct PlayerDetailView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     profileHeader
-                    infoSection
-                    statsUnavailableNote
+                    infoGrid
+                    if player.isInjured { injuryBanner }
                 }
                 .padding(.bottom, 30)
             }
@@ -22,115 +23,84 @@ struct PlayerDetailView: View {
     private var profileHeader: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.nbaGold.opacity(0.2), Color.nbaBG],
+                colors: [Color(hex: team?.color ?? "1D428A").opacity(0.35), Color.nbaBG],
                 startPoint: .top, endPoint: .bottom
             )
             VStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.nbaGold.opacity(0.4), Color.nbaRed.opacity(0.3)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 100, height: 100)
-                    Text(player.initials)
-                        .font(.system(size: 38, weight: .black))
-                        .foregroundColor(.white)
-                }
-                Text(player.fullName)
-                    .font(.title2.bold())
-                    .foregroundColor(.white)
-
+                PlayerHeadshotView(player: player, size: 110)
+                Text(player.fullName).font(.title2.bold()).foregroundColor(.white)
                 HStack(spacing: 12) {
-                    Text(player.positionDisplay)
-                        .font(.caption.bold())
-                        .foregroundColor(.nbaGold)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.nbaGold.opacity(0.15))
-                        .cornerRadius(8)
-
-                    if let jersey = player.jerseyNumber {
-                        Text("#\(jersey)")
-                            .font(.caption.bold())
-                            .foregroundColor(.white)
-                    }
-
-                    if let team = player.team {
+                    badge(player.position, color: .nbaGold)
+                    Text("#\(player.jersey)").font(.caption.bold()).foregroundColor(.white)
+                    if let team {
                         HStack(spacing: 4) {
                             TeamLogoView(team: team, size: 20)
-                            Text(team.abbreviation)
-                                .font(.caption.bold())
-                                .foregroundColor(.white)
+                            Text(team.abbreviation).font(.caption.bold()).foregroundColor(.white)
                         }
                     }
                 }
             }
-            .padding(.vertical, 24)
+            .padding(.vertical, 28)
         }
     }
 
-    private var infoSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+    private var infoGrid: some View {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Profile")
-                .padding(.bottom, 12)
+                .padding(.horizontal)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 1) {
-                infoCell(label: "Height",  value: player.height  ?? "N/A")
-                infoCell(label: "Weight",  value: player.weight.map { "\($0) lbs" } ?? "N/A")
-                infoCell(label: "Country", value: player.country ?? "N/A")
-                infoCell(label: "College", value: player.college ?? "N/A")
-                if let year = player.draftYear {
-                    infoCell(label: "Draft Year", value: "\(year)")
-                    infoCell(
-                        label: "Draft Pick",
-                        value: player.draftNumber.map { "Round \(player.draftRound ?? 0), #\($0)" } ?? "N/A"
-                    )
+                infoCell("Height",  player.displayHeight)
+                infoCell("Weight",  player.displayWeight)
+                if let age = player.age { infoCell("Age", "\(age)") }
+                if let college = player.college, !college.isEmpty { infoCell("College", college) }
+                if let city = player.birthCity, let country = player.birthCountry {
+                    infoCell("Hometown", "\(city), \(country)")
+                } else if let country = player.birthCountry {
+                    infoCell("Country", country)
                 }
             }
-            .background(Color.nbaCard)
-            .cornerRadius(14)
-            .padding(.horizontal)
+            .background(Color.nbaCard).cornerRadius(14).padding(.horizontal)
         }
     }
 
-    private func infoCell(label: String, value: String) -> some View {
+    private func infoCell(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.nbaSecondary)
-            Text(value)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+            Text(label).font(.caption).foregroundColor(.nbaSecondary)
+            Text(value).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.nbaCard)
     }
 
-    private var statsUnavailableNote: some View {
-        VStack(spacing: 12) {
-            SectionHeader(title: "Season Stats")
-                .padding(.horizontal)
-            HStack(spacing: 14) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.nbaGold)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Stats require a premium API plan")
-                        .font(.subheadline.bold())
-                        .foregroundColor(.white)
-                    Text("Upgrade at balldontlie.io to unlock season averages")
-                        .font(.caption)
-                        .foregroundColor(.nbaSecondary)
+    private var injuryBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "cross.fill")
+                .font(.system(size: 16))
+                .foregroundColor(.nbaRed)
+                .frame(width: 36, height: 36)
+                .background(Color.nbaRed.opacity(0.15))
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 3) {
+                Text(player.injuryStatus ?? "Injured")
+                    .font(.subheadline.bold()).foregroundColor(.nbaRed)
+                if let detail = player.injuryDetail, !detail.isEmpty {
+                    Text(detail).font(.caption).foregroundColor(.nbaSecondary).lineLimit(3)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.nbaCard)
-            .cornerRadius(14)
-            .padding(.horizontal)
+            Spacer()
         }
+        .padding(14)
+        .background(Color.nbaRed.opacity(0.08))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.nbaRed.opacity(0.3), lineWidth: 1))
+        .padding(.horizontal)
+    }
+
+    private func badge(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption.bold()).foregroundColor(color)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(color.opacity(0.15)).cornerRadius(8)
     }
 }

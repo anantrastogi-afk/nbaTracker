@@ -1,40 +1,67 @@
 import Foundation
 
-struct Player: Codable, Identifiable, Hashable {
-    let id: Int
+struct Player: Identifiable, Hashable {
+    let id: String
+    let fullName: String
     let firstName: String
     let lastName: String
-    let position: String?
-    let height: String?
-    let weight: String?
-    let jerseyNumber: String?
+    let position: String
+    let jersey: String
+    let headshotURL: URL?
+    let displayHeight: String
+    let displayWeight: String
+    let age: Int?
     let college: String?
-    let country: String?
-    let draftYear: Int?
-    let draftRound: Int?
-    let draftNumber: Int?
-    let team: Team?
+    let birthCity: String?
+    let birthCountry: String?
+    let injuryStatus: String?   // "Active", "Out", "Questionable", etc.
+    let injuryDetail: String?
 
-    enum CodingKeys: String, CodingKey {
-        case id, position, height, weight, college, country, team
-        case firstName    = "first_name"
-        case lastName     = "last_name"
-        case jerseyNumber = "jersey_number"
-        case draftYear    = "draft_year"
-        case draftRound   = "draft_round"
-        case draftNumber  = "draft_number"
-    }
+    static func == (lhs: Player, rhs: Player) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    var fullName: String { "\(firstName) \(lastName)" }
     var initials: String {
         let f = firstName.first.map(String.init) ?? ""
         let l = lastName.first.map(String.init) ?? ""
         return "\(f)\(l)"
     }
-    var positionDisplay: String { position?.isEmpty == false ? position! : "N/A" }
-}
+    var isInjured: Bool {
+        guard let s = injuryStatus else { return false }
+        return s != "Active" && !s.isEmpty
+    }
 
-struct PlayersResponse: Codable {
-    let data: [Player]
-    let meta: CursorMeta
+    // Parse from ESPN /teams/{id}/roster athletes array
+    static func from(_ dict: [String: Any]) -> Player? {
+        guard let id   = dict["id"]          as? String,
+              let full = dict["fullName"]     as? String,
+              let first = dict["firstName"]   as? String,
+              let last  = dict["lastName"]    as? String
+        else { return nil }
+
+        let pos     = (dict["position"] as? [String: Any])?["displayName"] as? String ?? "N/A"
+        let jersey  = dict["jersey"]          as? String ?? "--"
+        let height  = dict["displayHeight"]   as? String ?? "--"
+        let weight  = dict["displayWeight"]   as? String ?? "--"
+        let age     = dict["age"]             as? Int
+        let college = dict["college"]         as? String
+
+        let birth      = dict["birthPlace"] as? [String: Any]
+        let birthCity  = birth?["city"]    as? String
+        let birthCountry = birth?["country"] as? String
+
+        let hsDict   = dict["headshot"] as? [String: Any]
+        let hsHref   = hsDict?["href"] as? String
+        let hsURL    = hsHref.flatMap { URL(string: $0) }
+
+        let injuries = dict["injuries"] as? [[String: Any]] ?? []
+        let inj      = injuries.first
+        let injStatus  = inj?["status"]  as? String
+        let injDetail  = inj?["longComment"] as? String
+
+        return Player(id: id, fullName: full, firstName: first, lastName: last,
+                      position: pos, jersey: jersey, headshotURL: hsURL,
+                      displayHeight: height, displayWeight: weight, age: age,
+                      college: college, birthCity: birthCity, birthCountry: birthCountry,
+                      injuryStatus: injStatus, injuryDetail: injDetail)
+    }
 }

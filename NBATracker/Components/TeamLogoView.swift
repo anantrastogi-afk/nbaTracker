@@ -5,21 +5,22 @@ struct TeamLogoView: View {
     let size: CGFloat
 
     var body: some View {
-        AsyncImage(url: team.logoURL) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFit()
-            default:
-                fallbackLogo
+        if let url = team.logoURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFit()
+                default: fallback
+                }
             }
+            .frame(width: size, height: size)
+        } else {
+            fallback.frame(width: size, height: size)
         }
-        .frame(width: size, height: size)
     }
 
-    private var fallbackLogo: some View {
+    private var fallback: some View {
         ZStack {
-            Circle()
-                .fill(Color(hex: team.primaryColor).opacity(0.3))
+            Circle().fill(Color(hex: team.color).opacity(0.3))
             Text(team.abbreviation)
                 .font(.system(size: size * 0.3, weight: .bold))
                 .foregroundColor(.white)
@@ -27,14 +28,37 @@ struct TeamLogoView: View {
     }
 }
 
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r = Double((int >> 16) & 0xFF) / 255
-        let g = Double((int >> 8)  & 0xFF) / 255
-        let b = Double(int & 0xFF)          / 255
-        self.init(red: r, green: g, blue: b)
+struct PlayerHeadshotView: View {
+    let player: Player
+    let size: CGFloat
+
+    var body: some View {
+        if let url = player.headshotURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFill()
+                        .frame(width: size, height: size)
+                        .clipShape(Circle())
+                default: initialsView
+                }
+            }
+        } else {
+            initialsView
+        }
+    }
+
+    private var initialsView: some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color.nbaGold.opacity(0.4), Color.nbaRed.opacity(0.3)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .frame(width: size, height: size)
+            Text(player.initials)
+                .font(.system(size: size * 0.35, weight: .black))
+                .foregroundColor(.white)
+        }
     }
 }

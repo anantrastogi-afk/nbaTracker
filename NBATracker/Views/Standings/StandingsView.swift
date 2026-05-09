@@ -6,24 +6,19 @@ final class StandingsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    var eastStandings: [Standing] {
-        standings.filter { $0.team.conference == "East" }
-                 .sorted { $0.conferenceRank < $1.conferenceRank }
+    var east: [Standing] {
+        standings.filter { $0.conference.contains("East") }
+                 .sorted { $0.wins > $1.wins }
     }
-
-    var westStandings: [Standing] {
-        standings.filter { $0.team.conference == "West" }
-                 .sorted { $0.conferenceRank < $1.conferenceRank }
+    var west: [Standing] {
+        standings.filter { $0.conference.contains("West") }
+                 .sorted { $0.wins > $1.wins }
     }
 
     func load() async {
-        isLoading = true
-        error = nil
-        do {
-            standings = try await NBAService.shared.fetchStandings()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        isLoading = true; error = nil
+        do { standings = try await NBAService.shared.fetchStandings() }
+        catch { self.error = error.localizedDescription }
         isLoading = false
     }
 }
@@ -59,14 +54,12 @@ struct StandingsView: View {
 
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    standingsHeader
-                    let list = selectedConference == 0 ? vm.eastStandings : vm.westStandings
-                    ForEach(Array(list.enumerated()), id: \.element.id) { index, standing in
-                        StandingRow(standing: standing, rank: index + 1)
-                        if index < list.count - 1 {
-                            Divider()
-                                .background(Color.white.opacity(0.05))
-                                .padding(.leading, 56)
+                    columnHeader
+                    let list = selectedConference == 0 ? vm.east : vm.west
+                    ForEach(Array(list.enumerated()), id: \.element.id) { idx, s in
+                        StandingRow(standing: s, rank: idx + 1)
+                        if idx < list.count - 1 {
+                            Divider().background(Color.white.opacity(0.06)).padding(.leading, 60)
                         }
                     }
                 }
@@ -78,23 +71,19 @@ struct StandingsView: View {
         }
     }
 
-    private var standingsHeader: some View {
-        HStack {
-            Text("#")
-                .frame(width: 30)
-            Text("Team")
-            Spacer()
-            Group {
-                Text("W").frame(width: 32)
-                Text("L").frame(width: 32)
-                Text("PCT").frame(width: 50)
-                Text("GB").frame(width: 40)
-            }
+    private var columnHeader: some View {
+        HStack(spacing: 0) {
+            Text("#").frame(width: 28, alignment: .center)
+            Text("Team").frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 50)
+            Text("W").frame(width: 32, alignment: .center)
+            Text("L").frame(width: 32, alignment: .center)
+            Text("PCT").frame(width: 46, alignment: .center)
+            Text("L10").frame(width: 40, alignment: .center)
+            Text("STK").frame(width: 40, alignment: .center)
         }
         .font(.system(size: 11, weight: .semibold))
         .foregroundColor(.nbaSecondary)
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 10)
         .padding(.vertical, 10)
-        .background(Color.nbaCard)
     }
 }

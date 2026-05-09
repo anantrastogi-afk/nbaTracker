@@ -2,102 +2,82 @@ import SwiftUI
 
 @MainActor
 final class PlayersViewModel: ObservableObject {
+    @Published var teams: [Team] = []
     @Published var players: [Player] = []
-    @Published var searchText = ""
+    @Published var selectedTeam: Team? = nil
     @Published var isLoading = false
     @Published var error: String?
 
-    private var searchTask: Task<Void, Never>?
+    func loadTeams() async {
+        guard teams.isEmpty else { return }
+        do { teams = try await NBAService.shared.fetchTeams() }
+        catch { self.error = error.localizedDescription }
+    }
 
-    func search() {
-        searchTask?.cancel()
-        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else {
-            players = []
-            return
-        }
-        searchTask = Task {
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled else { return }
-            isLoading = true
-            error = nil
-            do {
-                players = try await NBAService.shared.searchPlayers(query: searchText)
-            } catch {
-                if !Task.isCancelled { self.error = error.localizedDescription }
-            }
-            isLoading = false
-        }
+    func loadPlayers(for team: Team) async {
+        isLoading = true; error = nil; selectedTeam = team
+        do { players = try await NBAService.shared.fetchRoster(teamId: team.id) }
+        catch { self.error = error.localizedDescription }
+        isLoading = false
     }
 }
 
 struct PlayersView: View {
     @StateObject private var vm = PlayersViewModel()
+    @State private var showTeamPicker = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.nbaBG.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    searchBar
+                    teamPickerBar
                     if vm.isLoading { LoadingView() }
                     else if let err = vm.error { ErrorView(message: err, retry: { }) }
-                    else if vm.searchText.isEmpty { promptState }
-                    else if vm.players.isEmpty && !vm.isLoading { noResults }
+                    else if vm.selectedTeam == nil { promptState }
                     else { playerGrid }
                 }
             }
             .navigationTitle("Players")
             .navigationBarTitleDisplayMode(.large)
-        }
-    }
-
-    private var searchBar: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.nbaSecondary)
-            TextField("Search players...", text: $vm.searchText)
-                .foregroundColor(.white)
-                .autocorrectionDisabled()
-                .onChange(of: vm.searchText) { vm.search() }
-            if !vm.searchText.isEmpty {
-                Button { vm.searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.nbaSecondary)
+            .sheet(isPresented: $showTeamPicker) {
+                TeamPickerSheet(teams: vm.teams, selectedTeam: $vm.selectedTeam) { team in
+                    Task { await vm.loadPlayers(for: team) }
                 }
             }
         }
-        .padding(12)
-        .background(Color.nbaCard)
-        .cornerRadius(12)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
+        .task { await vm.loadTeams() }
+    }
+
+    private var teamPickerBar: some View {
+        Button {
+            showTeamPicker = true
+        } label: {
+            HStack {
+                if let t = vm.selectedTeam {
+                    TeamLogoView(team: t, size: 28)
+                    Text(t.displayName).font(.headline).foregroundColor(.white)
+                } else {
+                    Image(systemName: "shield.fill").foregroundColor(.nbaGold)
+                    Text("Select a Team").font(.headline).foregroundColor(.nbaGold)
+                }
+                Spacer()
+                Image(systemName: "chevron.down").font(.caption).foregroundColor(.nbaSecondary)
+            }
+            .padding(14)
+            .background(Color.nbaCard)
+            .cornerRadius(12)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
         .background(Color.nbaBG)
     }
 
     private var promptState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "person.2.fill")
-                .font(.system(size: 50))
-                .foregroundColor(.nbaGold)
-            Text("Search for a player")
-                .font(.title3.bold())
-                .foregroundColor(.white)
-            Text("Type a name to find player cards")
-                .foregroundColor(.nbaSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var noResults: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "person.slash")
-                .font(.system(size: 40))
-                .foregroundColor(.nbaSecondary)
-            Text("No players found")
-                .foregroundColor(.white)
-                .font(.headline)
-            Text("Try a different name")
-                .foregroundColor(.nbaSecondary)
+            Image(systemName: "person.2.fill").font(.system(size: 50)).foregroundColor(.nbaGold)
+            Text("Select a team above").font(.title3.bold()).foregroundColor(.white)
+            Text("Browse the full roster with player photos").foregroundColor(.nbaSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -105,14 +85,55 @@ struct PlayersView: View {
     private var playerGrid: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                ForEach(vm.players) { player in
-                    NavigationLink(destination: PlayerDetailView(player: player)) {
-                        PlayerCard(player: player)
+                ForEach(vm.players, id: \.id) { player in
+                    NavigationLink(destination: PlayerDetailView(player: player, team: vm.selectedTeam)) {
+                        PlayerCard(player: player, team: vm.selectedTeam)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
             }
             .padding()
+        }
+    }
+}
+
+struct TeamPickerSheet: View {
+    let teams: [Team]
+    @Binding var selectedTeam: Team?
+    let onSelect: (Team) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.nbaBG.ignoresSafeArea()
+                List(teams, id: \.id) { team in
+                    Button {
+                        selectedTeam = team
+                        onSelect(team)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 12) {
+                            TeamLogoView(team: team, size: 36)
+                            Text(team.displayName).foregroundColor(.white)
+                            Spacer()
+                            if selectedTeam?.id == team.id {
+                                Image(systemName: "checkmark").foregroundColor(.nbaGold)
+                            }
+                        }
+                    }
+                    .listRowBackground(Color.nbaCard)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Select Team")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }.foregroundColor(.nbaGold)
+                }
+            }
         }
     }
 }

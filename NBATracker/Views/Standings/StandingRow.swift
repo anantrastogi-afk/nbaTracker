@@ -5,38 +5,48 @@ struct StandingRow: View {
     let rank: Int
 
     var body: some View {
-        HStack {
-            rankBadge
-            TeamLogoView(team: standing.team, size: 30)
-                .padding(.horizontal, 4)
-            Text(standing.team.abbreviation)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 40, alignment: .leading)
-            Spacer()
-            Group {
-                Text("\(standing.wins)").frame(width: 32)
-                Text("\(standing.losses)").frame(width: 32)
-                Text(String(format: "%.3f", standing.winPct)).frame(width: 50)
-                Text(gamesBack).frame(width: 40)
+        HStack(spacing: 0) {
+            // Rank
+            Text("\(rank)")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(rank <= 8 ? .nbaGold : .nbaSecondary)
+                .frame(width: 28, alignment: .center)
+
+            // Logo + abbr
+            HStack(spacing: 6) {
+                TeamLogoView(team: standing.team, size: 28)
+                Text(standing.team.abbreviation)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
             }
-            .font(.system(size: 14))
-            .foregroundColor(rank == 1 ? .white : .nbaSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 4)
+
+            // Stats
+            statCell("\(standing.wins)")
+            statCell("\(standing.losses)")
+            statCell(standing.winPct)
+            statCell(standing.lastTen)
+            streakCell(standing.streak)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(rank <= 6 ? Color.nbaGold.opacity(0.04) : Color.clear)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(rank == 1 ? Color.nbaGold.opacity(0.06) : rank <= 6 ? Color.nbaGold.opacity(0.03) : Color.clear)
     }
 
-    private var rankBadge: some View {
-        Text("\(rank)")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundColor(rank <= 8 ? .nbaGold : .nbaSecondary)
-            .frame(width: 24)
+    private func statCell(_ val: String) -> some View {
+        Text(val)
+            .font(.system(size: 12))
+            .foregroundColor(.nbaSecondary)
+            .frame(width: rank <= 8 ? 32 : 32, alignment: .center)
+            .frame(width: 32)
     }
 
-    private var gamesBack: String {
-        if rank == 1 { return "-" }
-        return "-"
+    private func streakCell(_ streak: String) -> some View {
+        let isWin = streak.hasPrefix("W")
+        return Text(streak)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(isWin ? .green : .nbaRed)
+            .frame(width: 40, alignment: .center)
     }
 }

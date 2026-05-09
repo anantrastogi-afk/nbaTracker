@@ -5,72 +5,71 @@ struct GameCard: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            teamSide(team: game.visitorTeam, score: game.visitorTeamScore, isLeading: false)
-            middleSection
-            teamSide(team: game.homeTeam, score: game.homeTeamScore, isLeading: true)
+            teamSide(competitor: game.awayTeam, isWinner: awayWins)
+            centerInfo
+            teamSide(competitor: game.homeTeam, isWinner: homeWins)
         }
-        .padding()
+        .padding(14)
         .background(Color.nbaCard)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(game.isLive ? Color.nbaGold.opacity(0.5) : Color.clear, lineWidth: 1)
+                .stroke(game.status.isLive ? Color.nbaGold.opacity(0.6) : Color.clear, lineWidth: 1)
         )
     }
 
-    private func teamSide(team: Team, score: Int, isLeading: Bool) -> some View {
+    private func teamSide(competitor: Game.GameCompetitor, isWinner: Bool) -> some View {
         VStack(spacing: 6) {
-            TeamLogoView(team: team, size: 50)
-            Text(team.abbreviation)
-                .font(.system(size: 13, weight: .semibold))
+            TeamLogoView(team: competitor.team, size: 46)
+            Text(competitor.team.abbreviation)
+                .font(.system(size: 13, weight: .bold))
                 .foregroundColor(.white)
-            if game.status.lowercased() != "final" && !game.isLive {
-                Text(team.city)
+            if game.status.isScheduled {
+                Text(competitor.record)
                     .font(.caption2)
                     .foregroundColor(.nbaSecondary)
-                    .lineLimit(1)
             } else {
-                Text("\(score)")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(isWinner(team: team, score: score) ? .white : .nbaSecondary)
+                Text("\(competitor.score)")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundColor(isWinner ? .white : .nbaSecondary)
             }
         }
         .frame(maxWidth: .infinity)
     }
 
-    private var middleSection: some View {
-        VStack(spacing: 4) {
-            if game.isLive {
-                Circle()
-                    .fill(Color.nbaRed)
-                    .frame(width: 8, height: 8)
+    private var centerInfo: some View {
+        VStack(spacing: 5) {
+            if game.status.isLive {
+                HStack(spacing: 4) {
+                    Circle().fill(Color.nbaRed).frame(width: 7, height: 7)
+                    Text("LIVE").font(.system(size: 10, weight: .black)).foregroundColor(.nbaRed)
+                }
             }
-            Text(game.statusDisplay)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(game.isLive ? .nbaRed : .nbaSecondary)
+            Text(game.status.isFinal ? "Final" : game.status.isLive ? game.status.display : game.formattedTime)
+                .font(.system(size: game.status.isLive ? 13 : 12, weight: .bold))
+                .foregroundColor(game.status.isLive ? .nbaRed : .nbaSecondary)
                 .multilineTextAlignment(.center)
 
-            if game.postseason {
+            if game.isPostseason {
                 Text("PLAYOFFS")
-                    .font(.system(size: 9, weight: .black))
+                    .font(.system(size: 8, weight: .black))
                     .foregroundColor(.nbaGold)
                     .tracking(1)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
                     .background(Color.nbaGold.opacity(0.15))
                     .cornerRadius(4)
             }
-
-            Text("vs")
-                .font(.caption2)
-                .foregroundColor(.nbaSecondary)
+            Text("@").font(.caption2).foregroundColor(.nbaSecondary)
         }
-        .frame(width: 80)
+        .frame(width: 76)
     }
 
-    private func isWinner(team: Team, score: Int) -> Bool {
-        guard game.status.lowercased() == "final" else { return false }
-        let otherScore = team.id == game.homeTeam.id ? game.visitorTeamScore : game.homeTeamScore
-        return score > otherScore
+    private var homeWins: Bool {
+        guard game.status.isFinal else { return false }
+        return game.homeTeam.score > game.awayTeam.score
+    }
+    private var awayWins: Bool {
+        guard game.status.isFinal else { return false }
+        return game.awayTeam.score > game.homeTeam.score
     }
 }
