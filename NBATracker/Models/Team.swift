@@ -1,6 +1,6 @@
 import Foundation
 
-struct Team: Identifiable, Hashable {
+struct Team: Identifiable, Hashable, Codable {
     let id: String
     let abbreviation: String
     let displayName: String

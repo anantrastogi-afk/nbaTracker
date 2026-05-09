@@ -28,6 +28,7 @@ final class TeamDetailViewModel: ObservableObject {
 
 struct TeamDetailView: View {
     @StateObject private var vm: TeamDetailViewModel
+    @EnvironmentObject private var favorites: FavoritesStore
     init(team: Team) { _vm = StateObject(wrappedValue: TeamDetailViewModel(team: team)) }
 
     var body: some View {
@@ -54,6 +55,22 @@ struct TeamDetailView: View {
         }
         .navigationTitle(vm.team.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                let following = favorites.isFollowing(vm.team)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        favorites.toggle(vm.team)
+                    }
+                } label: {
+                    Image(systemName: following ? "star.fill" : "star")
+                        .foregroundColor(.nbaGold)
+                        .font(.system(size: 18))
+                        .scaleEffect(following ? 1.1 : 1.0)
+                }
+                .accessibilityLabel(following ? "Unfollow team" : "Follow team")
+            }
+        }
         .task { await vm.load() }
     }
 

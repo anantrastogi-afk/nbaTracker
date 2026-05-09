@@ -5,25 +5,29 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(0)
+
             ScoreboardView()
                 .tabItem { Label("Scoreboard", systemImage: "basketball.fill") }
-                .tag(0)
+                .tag(1)
 
             StandingsView()
                 .tabItem { Label("Standings", systemImage: "list.number") }
-                .tag(1)
+                .tag(2)
 
             TeamsView()
                 .tabItem { Label("Teams", systemImage: "shield.fill") }
-                .tag(2)
+                .tag(3)
 
             PlayersView()
                 .tabItem { Label("Players", systemImage: "person.fill") }
-                .tag(3)
+                .tag(4)
 
             PlayoffsView()
                 .tabItem { Label("Playoffs", systemImage: "trophy.fill") }
-                .tag(4)
+                .tag(5)
         }
         .tint(.nbaGold)
         .onAppear { configureTabBarAppearance() }

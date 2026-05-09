@@ -31,6 +31,8 @@
 		BF000022000000000000000A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF000022000000000000000A /* Preview Assets.xcassets */; };
 		BF000023000000000000000A /* Standing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000023000000000000000A /* Standing.swift */; };
 		BF000024000000000000000A /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000024000000000000000A /* Article.swift */; };
+		BF000025000000000000000A /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000025000000000000000A /* FavoritesStore.swift */; };
+		BF000026000000000000000A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF000026000000000000000A /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +61,8 @@
 		AF000022000000000000000A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		AF000023000000000000000A /* Standing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Standing.swift; sourceTree = "<group>"; };
 		AF000024000000000000000A /* Article.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Article.swift; sourceTree = "<group>"; };
+		AF000025000000000000000A /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
+		AF000026000000000000000A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				AF000007000000000000000A /* NBAService.swift */,
+				AF000025000000000000000A /* FavoritesStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -154,10 +159,19 @@
 			path = Playoffs;
 			sourceTree = "<group>";
 		};
+		CF000024000000000000000A /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				AF000026000000000000000A /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
 		CF000019000000000000000A /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				CF000013000000000000000A /* Main */,
+				CF000024000000000000000A /* Home */,
 				CF000014000000000000000A /* Scoreboard */,
 				CF000015000000000000000A /* Standings */,
 				CF000016000000000000000A /* Teams */,
@@ -299,6 +313,8 @@
 				BF000018000000000000000A /* PlayoffsView.swift in Sources */,
 				BF000019000000000000000A /* TeamLogoView.swift in Sources */,
 				BF000020000000000000000A /* StatBadge.swift in Sources */,
+				BF000025000000000000000A /* FavoritesStore.swift in Sources */,
+				BF000026000000000000000A /* HomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

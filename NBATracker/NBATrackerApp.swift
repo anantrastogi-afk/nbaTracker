@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct NBATrackerApp: App {
+    @StateObject private var favorites = FavoritesStore()
+
     init() {
         configureNavigationBar()
     }
@@ -9,6 +11,7 @@ struct NBATrackerApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environmentObject(favorites)
                 .preferredColorScheme(.dark)
         }
     }
