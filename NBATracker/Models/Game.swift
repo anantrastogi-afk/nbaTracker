@@ -25,27 +25,37 @@ struct Game: Codable, Identifiable {
 
     var isFinal: Bool { status.lowercased() == "final" }
     var isPostponed: Bool { postponed == true }
+    // Scheduled games have an ISO8601 datetime string in the status field
+    var isScheduled: Bool { status.contains("T") && status.contains(":") && !isFinal }
 
     var isLive: Bool {
-        guard !isFinal, !isPostponed, period > 0 else { return false }
-        if let t = time, t.isEmpty { return false }
+        guard !isFinal, !isPostponed, !isScheduled, period > 0 else { return false }
         return true
     }
 
     var statusDisplay: String {
-        if isPostponed    { return "PPD" }
-        if isFinal        { return "Final" }
-        if let t = time, !t.isEmpty, t.lowercased() != "final" {
-            return "Q\(period) \(t)"
-        }
-        return scheduledTime
+        if isPostponed { return "PPD" }
+        if isFinal     { return "Final" }
+        if isLive, let t = time, !t.isEmpty { return "Q\(period) \(t)" }
+        if isLive      { return "Q\(period)" }
+        return formattedStartTime
     }
 
-    var scheduledTime: String {
-        guard let dt = datetime, dt.count >= 16 else { return status }
+    var formattedStartTime: String {
+        // Use datetime field if available, fall back to status (which may be ISO8601)
+        let raw = datetime ?? (isScheduled ? status : nil)
+        guard let raw else { return status }
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = formatter.date(from: dt) {
+        if let d = formatter.date(from: raw) {
+            let out = DateFormatter()
+            out.dateFormat = "h:mm a"
+            out.timeZone = TimeZone.current
+            return out.string(from: d)
+        }
+        // Try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        if let d = formatter.date(from: raw) {
             let out = DateFormatter()
             out.dateFormat = "h:mm a"
             out.timeZone = TimeZone.current

@@ -3,7 +3,8 @@ import SwiftUI
 enum NBAConfig {
     static let apiKey = "ac6b81cb-5f12-4f58-ae90-bb0e98fbb0fb"
     static let baseURL = "https://api.balldontlie.io/v1"
-    static let currentSeason = 2024
+    // NBA season year = year the season starts (2025 = 2025-26 season)
+    static let currentSeason = 2025
 }
 
 extension Color {
