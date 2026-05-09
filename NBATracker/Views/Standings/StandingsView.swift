@@ -7,12 +7,12 @@ final class StandingsViewModel: ObservableObject {
     @Published var error: String?
 
     var eastStandings: [Standing] {
-        standings.filter { $0.conference.lowercased() == "east" }
+        standings.filter { $0.team.conference == "East" }
                  .sorted { $0.conferenceRank < $1.conferenceRank }
     }
 
     var westStandings: [Standing] {
-        standings.filter { $0.conference.lowercased() == "west" }
+        standings.filter { $0.team.conference == "West" }
                  .sorted { $0.conferenceRank < $1.conferenceRank }
     }
 

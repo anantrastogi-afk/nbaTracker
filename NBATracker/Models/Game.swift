@@ -3,6 +3,7 @@ import Foundation
 struct Game: Codable, Identifiable {
     let id: Int
     let date: String
+    let datetime: String?
     let homeTeamScore: Int
     let visitorTeamScore: Int
     let season: Int
@@ -10,37 +11,41 @@ struct Game: Codable, Identifiable {
     let status: String
     let time: String?
     let postseason: Bool
+    let postponed: Bool?
     let homeTeam: Team
     let visitorTeam: Team
 
     enum CodingKeys: String, CodingKey {
-        case id, date, season, period, status, time, postseason
+        case id, date, datetime, season, period, status, time, postseason, postponed
         case homeTeamScore    = "home_team_score"
         case visitorTeamScore = "visitor_team_score"
         case homeTeam         = "home_team"
         case visitorTeam      = "visitor_team"
     }
 
+    var isFinal: Bool { status.lowercased() == "final" }
+    var isPostponed: Bool { postponed == true }
+
     var isLive: Bool {
-        guard let t = time, !t.isEmpty else { return false }
-        return status.lowercased() != "final" && period > 0
+        guard !isFinal, !isPostponed, period > 0 else { return false }
+        if let t = time, t.isEmpty { return false }
+        return true
     }
 
     var statusDisplay: String {
-        if status.lowercased() == "final" { return "Final" }
-        if let t = time, !t.isEmpty { return "Q\(period) \(t)" }
-        return formattedTime
+        if isPostponed    { return "PPD" }
+        if isFinal        { return "Final" }
+        if let t = time, !t.isEmpty, t.lowercased() != "final" {
+            return "Q\(period) \(t)"
+        }
+        return scheduledTime
     }
 
-    var formattedTime: String {
-        guard date.count >= 16 else { return status }
-        let parts = date.split(separator: "T")
-        guard parts.count == 2 else { return status }
-        let timePart = String(parts[1].prefix(5))
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(abbreviation: "UTC")
-        if let d = formatter.date(from: timePart) {
+    var scheduledTime: String {
+        guard let dt = datetime, dt.count >= 16 else { return status }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = formatter.date(from: dt) {
             let out = DateFormatter()
             out.dateFormat = "h:mm a"
             out.timeZone = TimeZone.current
@@ -52,39 +57,27 @@ struct Game: Codable, Identifiable {
 
 struct GamesResponse: Codable {
     let data: [Game]
-    let meta: PaginationMeta
+    let meta: CursorMeta
 }
 
-struct Standing: Codable, Identifiable {
-    let id: Int
-    let team: Team
-    let conference: String
-    let division: String
-    let wins: Int
-    let losses: Int
-    let homeRecord: String?
-    let awayRecord: String?
-    let divisionRecord: String?
-    let conferenceRank: Int
-    let divisionRank: Int
+struct CursorMeta: Codable {
+    let nextCursor: Int?
+    let perPage: Int
 
     enum CodingKeys: String, CodingKey {
-        case id, team, conference, division, wins, losses
-        case homeRecord      = "home_record"
-        case awayRecord      = "away_record"
-        case divisionRecord  = "division_record"
-        case conferenceRank  = "conference_rank"
-        case divisionRank    = "division_rank"
+        case nextCursor = "next_cursor"
+        case perPage    = "per_page"
     }
-
-    var winPct: Double {
-        let total = wins + losses
-        return total > 0 ? Double(wins) / Double(total) : 0
-    }
-
-    var record: String { "\(wins)-\(losses)" }
 }
 
-struct StandingsResponse: Codable {
-    let data: [Standing]
+// Computed standing — built from game results, no paid API needed
+struct Standing: Identifiable {
+    let team: Team
+    var wins: Int
+    var losses: Int
+    var conferenceRank: Int = 0
+
+    var id: Int { team.id }
+    var winPct: Double { Double(wins) / Double(max(1, wins + losses)) }
+    var record: String { "\(wins)-\(losses)" }
 }
