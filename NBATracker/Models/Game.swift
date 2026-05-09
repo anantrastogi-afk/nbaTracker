@@ -7,11 +7,54 @@ struct Game: Identifiable {
     let awayTeam: GameCompetitor
     let status: GameStatus
     let isPostseason: Bool
+    let odds: GameOdds?
 
     struct GameCompetitor {
         let team: Team
         let score: Int
         let record: String
+    }
+
+    struct GameOdds {
+        let homeWinPct: Double   // 0.0–1.0, vig-normalized
+        let awayWinPct: Double
+        let details: String      // e.g. "OKC -8.5"
+
+        // American moneyline string ("−375" or "+295") → raw implied probability
+        private static func impliedProb(_ raw: String) -> Double? {
+            let cleaned = raw.replacingOccurrences(of: "−", with: "-")
+                             .replacingOccurrences(of: "\u{2212}", with: "-")
+                             .trimmingCharacters(in: .whitespaces)
+            guard let value = Double(cleaned), value != 0 else { return nil }
+            if value < 0 {
+                return abs(value) / (abs(value) + 100)
+            } else {
+                return 100 / (value + 100)
+            }
+        }
+
+        static func from(_ oddsArray: [[String: Any]]) -> GameOdds? {
+            guard let first = oddsArray.first else { return nil }
+            let details = first["details"] as? String ?? ""
+
+            // Prefer moneyline close odds
+            let ml = first["moneyline"] as? [String: Any]
+            let homeClose = ((ml?["home"] as? [String: Any])?["close"] as? [String: Any])?["odds"] as? String ?? ""
+            let awayClose = ((ml?["away"] as? [String: Any])?["close"] as? [String: Any])?["odds"] as? String ?? ""
+
+            // Fallback: homeTeamOdds / awayTeamOdds moneyLine
+            let homeML = homeClose.isEmpty
+                ? (first["homeTeamOdds"] as? [String: Any])?["moneyLine"] as? String ?? ""
+                : homeClose
+            let awayML = awayClose.isEmpty
+                ? (first["awayTeamOdds"] as? [String: Any])?["moneyLine"] as? String ?? ""
+                : awayClose
+
+            guard let rawHome = impliedProb(homeML), let rawAway = impliedProb(awayML) else { return nil }
+            let total = rawHome + rawAway
+            guard total > 0 else { return nil }
+            return GameOdds(homeWinPct: rawHome / total, awayWinPct: rawAway / total, details: details)
+        }
     }
 
     struct GameStatus {
@@ -88,8 +131,11 @@ struct Game: Identifiable {
         let seasonType = (event["season"] as? [String: Any])?["type"] as? Int ?? 2
         let isPost = seasonType == 3
 
+        let oddsArray = comps["odds"] as? [[String: Any]] ?? []
+        let gameOdds = GameOdds.from(oddsArray)
+
         return Game(id: id, date: date, homeTeam: home, awayTeam: away,
-                    status: status, isPostseason: isPost)
+                    status: status, isPostseason: isPost, odds: gameOdds)
     }
 
     // ESPN sends several date formats — try each one

@@ -116,6 +116,12 @@ struct PlayoffGameCard: View {
                 teamSide(competitor: game.homeTeam, isWinner: homeWins)
             }
             .padding(16)
+
+            if let odds = game.odds {
+                winProbBar(odds: odds)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+            }
         }
         .background(Color.nbaCard)
         .cornerRadius(16)
@@ -123,6 +129,46 @@ struct PlayoffGameCard: View {
             game.status.isLive ? Color.nbaGold.opacity(0.6) : Color.nbaGold.opacity(0.15),
             lineWidth: game.status.isLive ? 1.5 : 1
         ))
+    }
+
+    @ViewBuilder
+    private func winProbBar(odds: Game.GameOdds) -> some View {
+        let awayPct  = odds.awayWinPct
+        let homePct  = odds.homeWinPct
+        let awayColor = Color(hex: game.awayTeam.team.color)
+        let homeColor = Color(hex: game.homeTeam.team.color)
+
+        VStack(spacing: 5) {
+            // Labels
+            HStack {
+                Text("\(game.awayTeam.team.abbreviation) \(Int(awayPct * 100))%")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(awayColor)
+                Spacer()
+                Text("Win Probability")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.nbaSecondary)
+                Spacer()
+                Text("\(Int(homePct * 100))% \(game.homeTeam.team.abbreviation)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(homeColor)
+            }
+
+            // Bar
+            GeometryReader { geo in
+                let awayWidth = geo.size.width * awayPct
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(awayColor)
+                        .frame(width: awayWidth)
+                    Rectangle()
+                        .fill(homeColor)
+                }
+                .frame(height: 6)
+                .clipShape(Capsule())
+            }
+            .frame(height: 6)
+        }
     }
 
     private func teamSide(competitor: Game.GameCompetitor, isWinner: Bool) -> some View {
