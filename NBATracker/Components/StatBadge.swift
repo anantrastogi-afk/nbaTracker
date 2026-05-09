@@ -80,3 +80,117 @@ struct SectionHeader: View {
         .padding(.horizontal)
     }
 }
+
+// Tappable news article row — opens link in Safari or shows reading sheet
+struct ArticleRow: View {
+    let article: Article
+    @State private var showReader = false
+
+    var body: some View {
+        Button {
+            if article.link != nil { showReader = true }
+        } label: {
+            HStack(spacing: 12) {
+                if let url = article.imageURL {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let img) = phase { img.resizable().scaledToFill() }
+                        else { Color.nbaCard }
+                    }
+                    .frame(width: 80, height: 60)
+                    .clipped()
+                    .cornerRadius(8)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(article.headline)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    if !article.description.isEmpty {
+                        Text(article.description)
+                            .font(.caption2)
+                            .foregroundColor(.nbaSecondary)
+                            .lineLimit(1)
+                    }
+                    HStack(spacing: 6) {
+                        Text(article.timeAgo)
+                            .font(.caption2)
+                            .foregroundColor(.nbaSecondary)
+                        if article.link != nil {
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption2)
+                                .foregroundColor(.nbaGold)
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .background(Color.nbaCard)
+            .cornerRadius(12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .sheet(isPresented: $showReader) {
+            if let link = article.link {
+                ArticleReaderSheet(article: article, url: link)
+            }
+        }
+    }
+}
+
+struct ArticleReaderSheet: View {
+    let article: Article
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let imgURL = article.imageURL {
+                        AsyncImage(url: imgURL) { phase in
+                            if case .success(let img) = phase {
+                                img.resizable().scaledToFit()
+                            } else { EmptyView() }
+                        }
+                        .cornerRadius(12)
+                    }
+                    Text(article.headline)
+                        .font(.title3.bold())
+                        .foregroundColor(.white)
+                    Text(article.timeAgo)
+                        .font(.caption)
+                        .foregroundColor(.nbaSecondary)
+                    if !article.description.isEmpty {
+                        Text(article.description)
+                            .font(.body)
+                            .foregroundColor(Color(white: 0.85))
+                            .lineSpacing(5)
+                    }
+                    Link(destination: url) {
+                        HStack {
+                            Image(systemName: "safari.fill")
+                            Text("Read full article on ESPN")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.nbaBG)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.nbaGold)
+                        .cornerRadius(14)
+                    }
+                }
+                .padding()
+            }
+            .background(Color.nbaBG.ignoresSafeArea())
+            .navigationTitle("Article")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }.foregroundColor(.nbaGold)
+                }
+            }
+        }
+    }
+}

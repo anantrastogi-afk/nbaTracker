@@ -35,7 +35,11 @@ struct PlayersView: View {
                     if vm.isLoading { LoadingView() }
                     else if let err = vm.error { ErrorView(message: err, retry: { }) }
                     else if vm.selectedTeam == nil { promptState }
-                    else { playerGrid }
+                    else {
+                        ScrollView {
+                            playerGrid
+                        }
+                    }
                 }
             }
             .navigationTitle("Players")
@@ -83,17 +87,15 @@ struct PlayersView: View {
     }
 
     private var playerGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                ForEach(vm.players, id: \.id) { player in
-                    NavigationLink(destination: PlayerDetailView(player: player, team: vm.selectedTeam)) {
-                        PlayerCard(player: player, team: vm.selectedTeam)
-                    }
-                    .buttonStyle(PlainButtonStyle())
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+            ForEach(vm.players, id: \.id) { player in
+                NavigationLink(destination: PlayerDetailView(player: player, team: vm.selectedTeam)) {
+                    PlayerCard(player: player, team: vm.selectedTeam)
                 }
+                .buttonStyle(PlainButtonStyle())
             }
-            .padding()
         }
+        .padding()
     }
 }
 

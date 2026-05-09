@@ -38,8 +38,7 @@ struct StandingRow: View {
         Text(val)
             .font(.system(size: 12))
             .foregroundColor(.nbaSecondary)
-            .frame(width: rank <= 8 ? 32 : 32, alignment: .center)
-            .frame(width: 32)
+            .frame(width: 32, alignment: .center)
     }
 
     private func streakCell(_ streak: String) -> some View {

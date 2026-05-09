@@ -26,13 +26,12 @@ struct ScoreboardView: View {
                 Color.nbaBG.ignoresSafeArea()
                 if vm.isLoading { LoadingView() }
                 else if let err = vm.error { ErrorView(message: err, retry: { Task { await vm.load() } }) }
-                else { content }
+                else { content.refreshable { await vm.load() } }
             }
             .navigationTitle("Scoreboard")
             .navigationBarTitleDisplayMode(.large)
         }
         .task { await vm.load() }
-        .refreshable { await vm.load() }
     }
 
     private var content: some View {

@@ -50,9 +50,7 @@ struct Game: Identifiable {
               let comps   = (event["competitions"] as? [[String: Any]])?.first
         else { return nil }
 
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime]
-        guard let date = iso.date(from: dateStr) else { return nil }
+        guard let date = Self.parseDate(dateStr) else { return nil }
 
         let competitors = comps["competitors"] as? [[String: Any]] ?? []
         guard let homeData = competitors.first(where: { ($0["homeAway"] as? String) == "home" }),
@@ -92,5 +90,22 @@ struct Game: Identifiable {
 
         return Game(id: id, date: date, homeTeam: home, awayTeam: away,
                     status: status, isPostseason: isPost)
+    }
+
+    // ESPN sends several date formats — try each one
+    private static func parseDate(_ s: String) -> Date? {
+        let formats = [
+            "yyyy-MM-dd'T'HH:mmZ",      // "2026-05-09T19:00Z"  (no seconds)
+            "yyyy-MM-dd'T'HH:mm:ssZ",   // "2026-05-09T19:00:00Z"
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ", // with fractional seconds
+            "yyyy-MM-dd"                 // date-only fallback
+        ]
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        for fmt in formats {
+            df.dateFormat = fmt
+            if let d = df.date(from: s) { return d }
+        }
+        return nil
     }
 }

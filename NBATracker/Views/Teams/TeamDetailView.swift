@@ -39,11 +39,14 @@ struct TeamDetailView: View {
                     tabPicker
                     if vm.isLoading { LoadingView().frame(height: 200) }
                     else {
-                        switch vm.selectedTab {
-                        case 0: rosterSection
-                        case 1: injurySection
-                        default: newsSection
+                        Group {
+                            switch vm.selectedTab {
+                            case 0: rosterSection
+                            case 1: injurySection
+                            default: newsSection
+                            }
                         }
+                        .animation(.easeInOut(duration: 0.2), value: vm.selectedTab)
                     }
                 }
             }
