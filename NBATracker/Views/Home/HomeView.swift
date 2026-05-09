@@ -45,7 +45,7 @@ struct HomeView: View {
         VStack(spacing: 18) {
             Image(systemName: "star.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.nbaGold, Color.nbaGold.opacity(0.2))
+                .foregroundStyle(Color.nbaGold, Color.nbaGold.opacity(0.2))
 
             Text("No favorite teams yet")
                 .font(.title3.bold())
