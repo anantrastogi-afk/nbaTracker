@@ -44,6 +44,9 @@ struct PlayersView: View {
             }
             .navigationTitle("Players")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
             .sheet(isPresented: $showTeamPicker) {
                 TeamPickerSheet(teams: vm.teams, selectedTeam: $vm.selectedTeam) { team in
                     Task { await vm.loadPlayers(for: team) }

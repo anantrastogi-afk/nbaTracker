@@ -34,6 +34,9 @@ struct PlayoffsView: View {
             }
             .navigationTitle("Playoffs")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
         }
         .task { await vm.load() }
         .refreshable { await vm.load() }

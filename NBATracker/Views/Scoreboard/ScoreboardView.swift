@@ -30,6 +30,9 @@ struct ScoreboardView: View {
             }
             .navigationTitle("Scoreboard")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
         }
         .task { await vm.load() }
     }

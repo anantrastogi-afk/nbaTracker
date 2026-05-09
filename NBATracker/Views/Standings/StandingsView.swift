@@ -37,6 +37,9 @@ struct StandingsView: View {
             }
             .navigationTitle("Standings")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
         }
         .task { await vm.load() }
         .refreshable { await vm.load() }

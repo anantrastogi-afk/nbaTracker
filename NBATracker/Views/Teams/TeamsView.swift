@@ -37,6 +37,9 @@ struct TeamsView: View {
             .navigationTitle("Teams")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $vm.searchText, prompt: "Search teams")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
         }
         .task { await vm.load() }
     }

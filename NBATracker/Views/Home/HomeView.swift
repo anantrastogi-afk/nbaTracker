@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var favorites: FavoritesStore
+    @EnvironmentObject var router: AppRouter
 
     var body: some View {
         NavigationStack {
@@ -15,6 +16,9 @@ struct HomeView: View {
             }
             .navigationTitle("My Teams")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { HamburgerButton() }
+            }
         }
     }
 
@@ -56,7 +60,9 @@ struct HomeView: View {
                 .foregroundColor(.nbaSecondary)
                 .multilineTextAlignment(.center)
 
-            NavigationLink(destination: TeamsView()) {
+            Button {
+                router.navigate(to: .teams)
+            } label: {
                 Label("Browse Teams", systemImage: "shield.fill")
                     .font(.headline)
                     .foregroundColor(.black)
