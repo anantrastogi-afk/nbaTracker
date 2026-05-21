@@ -3,10 +3,12 @@ Amazon Refund Tracker — CLI entry point.
 
 Usage:
     python -m amazon_refund_tracker                  # Scan & show report
-    python -m amazon_refund_tracker --report         # Show saved data only (no scrape)
-    python -m amazon_refund_tracker --export out.csv # Export to CSV
-    python -m amazon_refund_tracker --headless       # Run browser headlessly (no OTP support)
-    python -m amazon_refund_tracker --days 14        # Flag refunds pending > N days
+    python -m amazon_refund_tracker              # Scan & show report (CLI)
+    python -m amazon_refund_tracker --web        # Launch web UI  ← NEW
+    python -m amazon_refund_tracker --report     # Show saved data only (no scrape)
+    python -m amazon_refund_tracker --export out.csv
+    python -m amazon_refund_tracker --headless
+    python -m amazon_refund_tracker --days 14
 """
 
 import argparse
@@ -58,11 +60,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Amazon Refund Tracker — monitor returns, refunds, and fees",
     )
+    parser.add_argument("--web",      action="store_true", help="Launch web UI dashboard")
+    parser.add_argument("--port",     type=int, default=5050, help="Web UI port (default 5050)")
+    parser.add_argument("--host",     default="127.0.0.1",    help="Web UI host (default 127.0.0.1)")
     parser.add_argument("--report",   action="store_true", help="Show saved data without scraping")
     parser.add_argument("--export",   metavar="FILE",      help="Export results to CSV file")
     parser.add_argument("--headless", action="store_true", help="Run browser headlessly (no interactive OTP)")
     parser.add_argument("--days",     type=int, default=10, help="Days threshold for overdue alert (default 10)")
     args = parser.parse_args()
+
+    if args.web:
+        from .web.app import run as run_web
+        console.print(f"[bold cyan]Starting web UI at http://{args.host}:{args.port}[/bold cyan]")
+        console.print("[dim]Press Ctrl+C to stop.[/dim]")
+        run_web(host=args.host, port=args.port, debug=False)
+        return
 
     init_db()
 

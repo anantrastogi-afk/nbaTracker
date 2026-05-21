@@ -53,10 +53,15 @@ def _detect_fees(text: str) -> tuple[float, list[str]]:
 
 
 class AmazonSession:
-    def __init__(self, email: str, password: str, headless: bool = False):
+    def __init__(self, email: str, password: str, headless: bool = False,
+                 otp_callback=None, status_callback=None):
         self.email = email
         self.password = password
         self.headless = headless
+        # otp_callback(prompt: str) -> str | None  — called when OTP/CAPTCHA needed
+        self.otp_callback = otp_callback
+        # status_callback(msg: str) — called with progress updates
+        self.status_callback = status_callback
         self._pw: Optional[Playwright] = None
         self._browser: Optional[Browser] = None
         self._context: Optional[BrowserContext] = None
@@ -122,9 +127,18 @@ class AmazonSession:
             self.page.click("#signInSubmit")
             time.sleep(2)
 
-        # OTP / CAPTCHA — we rely on the user to handle it in the browser window
+        # OTP / CAPTCHA handling
         if not self._is_logged_in():
-            if not self.headless:
+            otp_field = self.page.query_selector("#auth-mfa-otpcode, input[name='otpCode'], #otp")
+            if otp_field and self.otp_callback:
+                otp = self.otp_callback("Amazon sent a one-time password to your device. Enter it here:")
+                if otp:
+                    otp_field.fill(str(otp).strip())
+                    submit = self.page.query_selector("#auth-signin-button, input[type='submit']")
+                    if submit:
+                        submit.click()
+                    time.sleep(2)
+            elif not self.headless:
                 print(
                     "\n[!] Amazon is asking for OTP / CAPTCHA. "
                     "Please complete it in the browser window.\n"
@@ -140,8 +154,13 @@ class AmazonSession:
     # Scrape returns
     # ------------------------------------------------------------------
 
+    def _status(self, msg: str) -> None:
+        if self.status_callback:
+            self.status_callback(msg)
+
     def scrape_returns(self) -> list[Return]:
         """Navigate to the Returns centre and scrape all visible returns."""
+        self._status("Loading Returns Centre…")
         self.page.goto(RETURNS_URL, timeout=30_000)
         time.sleep(2)
 
@@ -297,6 +316,7 @@ class AmazonSession:
 
     def scrape_order_history_for_refunds(self, max_pages: int = 5) -> list[Return]:
         """Walk order history pages and flag orders with refund/return activity."""
+        self._status("Scanning order history for refunds…")
         returns: list[Return] = []
         for page_num in range(max_pages):
             url = (

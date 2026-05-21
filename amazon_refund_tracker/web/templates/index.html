@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" x-data="app()" x-init="init()">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amazon Refund Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .status-badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+    .fade-in { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+    .sse-log { font-family: monospace; max-height: 160px; overflow-y: auto; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amazon: { DEFAULT:'#FF9900', dark:'#e47911', light:'#fff3e0' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen" x-cloak>
+
+<!-- ═══════════════════ TOPBAR ═══════════════════ -->
+<header class="bg-gray-900 text-white shadow-lg sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-amazon text-2xl font-black tracking-tight">amazon</span>
+      <span class="text-gray-400 text-sm font-medium">Refund Tracker</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- scan status indicator -->
+      <template x-if="scanState === 'running'">
+        <span class="flex items-center gap-2 text-amazon text-sm animate-pulse">
+          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          Scanning…
+        </span>
+      </template>
+      <a href="/api/export/csv"
+         class="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded-lg transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Export CSV
+      </a>
+      <button @click="openScanDrawer()"
+              class="flex items-center gap-1.5 bg-amazon hover:bg-amazon-dark text-gray-900 font-semibold text-sm px-4 py-1.5 rounded-lg transition shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Scan Amazon
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- SUMMARY CARDS -->
+  <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    {% set cards = [
+      ("Total Returns",   summary.total,             "blue",   "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"),
+      ("Pending",         summary.pending,           "yellow", "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0"),
+      ("Refunded",        summary.refunded,          "green",  "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0"),
+      ("Expected $",      "$" ~ "%.2f"|format(summary.total_expected), "indigo", "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0"),
+      ("Fees Charged",    "$" ~ "%.2f"|format(summary.total_fees),     "red",    "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"),
+      ("Net Refund",      "$" ~ "%.2f"|format(summary.net),            "emerald","M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M12 7v.01M3 21l9-9 9 9M3 3h6v6H3V3z"),
+    ] %}
+    {% for label, value, color, icon in cards %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2 fade-in">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ label }}</span>
+        <div class="w-8 h-8 rounded-lg bg-{{ color }}-50 flex items-center justify-center">
+          <svg class="w-4 h-4 text-{{ color }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon }}"/>
+          </svg>
+        </div>
+      </div>
+      <span class="text-2xl font-bold text-gray-900">{{ value }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- ALERTS ROW -->
+  {% if fee_alerts or overdue %}
+  <section class="grid md:grid-cols-2 gap-4">
+
+    {% if fee_alerts %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 fade-in">
+      <h3 class="font-semibold text-red-700 flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        Fee Alerts ({{ fee_alerts|length }})
+      </h3>
+      <ul class="space-y-2">
+        {% for r in fee_alerts %}
+        <li class="text-sm bg-white rounded-lg p-3 border border-red-100">
+          <div class="font-medium text-gray-800 truncate">{{ r.item_name }}</div>
+          <div class="text-gray-500 text-xs mt-0.5">Order {{ r.order_id }}</div>
+          <div class="flex items-center gap-3 mt-1.5">
+            <span class="text-red-600 font-semibold">–${{ "%.2f"|format(r.fees_charged) }} in fees</span>
+            {% if r.fee_breakdown %}
+            <span class="text-gray-400 text-xs">{{ r.fee_breakdown|join(", ") }}</span>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if overdue %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 fade-in">
+      <h3 class="font-semibold text-yellow-700 flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0"/>
+        </svg>
+        Overdue Refunds &gt;10 days ({{ overdue|length }})
+      </h3>
+      <ul class="space-y-2">
+        {% for r in overdue %}
+        <li class="text-sm bg-white rounded-lg p-3 border border-yellow-100">
+          <div class="font-medium text-gray-800 truncate">{{ r.item_name }}</div>
+          <div class="text-gray-500 text-xs mt-0.5">Order {{ r.order_id }}</div>
+          <div class="flex items-center gap-3 mt-1.5">
+            <span class="text-yellow-600 font-semibold">{{ r.days_pending }} days pending</span>
+            {% if r.refund_amount %}
+            <span class="text-gray-400 text-xs">Expected ${{ "%.2f"|format(r.refund_amount) }}</span>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </section>
+  {% endif %}
+
+  <!-- RETURNS TABLE -->
+  <section class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-semibold text-gray-800">Return &amp; Refund History</h2>
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-500">Filter:</label>
+        <select x-model="filter"
+                class="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amazon">
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="refunded">Refunded</option>
+          <option value="fees">Has Fees</option>
+        </select>
+      </div>
+    </div>
+
+    {% if returns %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Order</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Item</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Initiated</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Expected</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Fees</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Net</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Days</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Carrier</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50" id="returns-tbody">
+          {% for r in returns %}
+          {% set s = r.refund_status|lower %}
+          {% if "refund" in s and "pending" not in s %}
+            {% set badge = "bg-green-100 text-green-700" %}
+          {% elif "pending" in s or "processing" in s or "awaiting" in s or "requested" in s %}
+            {% set badge = "bg-yellow-100 text-yellow-700" %}
+          {% elif "rejected" in s or "denied" in s %}
+            {% set badge = "bg-red-100 text-red-700" %}
+          {% elif "received" in s %}
+            {% set badge = "bg-blue-100 text-blue-700" %}
+          {% else %}
+            {% set badge = "bg-gray-100 text-gray-600" %}
+          {% endif %}
+          <tr class="hover:bg-gray-50 transition-colors"
+              data-status="{{ r.refund_status|lower }}"
+              data-fees="{{ r.fees_charged }}">
+            <td class="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">{{ r.order_id[:20] }}</td>
+            <td class="px-4 py-3 max-w-xs">
+              <div class="truncate font-medium text-gray-900" title="{{ r.item_name }}">{{ r.item_name }}</div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ r.return_initiated or "—" }}</td>
+            <td class="px-4 py-3">
+              <span class="status-badge {{ badge }}">{{ r.refund_status }}</span>
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap text-gray-700">
+              {% if r.refund_amount %}${{ "%.2f"|format(r.refund_amount) }}{% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              {% if r.fees_charged > 0 %}
+                <span class="text-red-600 font-semibold">–${{ "%.2f"|format(r.fees_charged) }}</span>
+              {% else %}
+                <span class="text-gray-300">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap font-semibold">
+              {% if r.net_refund is not none %}
+                <span class="{{ 'text-green-600' if r.net_refund >= 0 else 'text-red-600' }}">
+                  ${{ "%.2f"|format(r.net_refund) }}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              {% if r.days_pending is not none %}
+                <span class="{{ 'text-red-600 font-semibold' if r.days_pending > 14 else ('text-yellow-600 font-medium' if r.days_pending > 7 else 'text-gray-500') }}">
+                  {{ r.days_pending }}d
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-xs text-gray-400">
+              {% if r.carrier %}
+                <span class="font-medium text-gray-600">{{ r.carrier }}</span>
+                {% if r.tracking_number %}
+                <div class="font-mono truncate w-24" title="{{ r.tracking_number }}">{{ r.tracking_number[:12] }}…</div>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="py-20 text-center">
+      <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+      <p class="text-gray-400 mb-4">No return records yet.</p>
+      <button @click="openScanDrawer()"
+              class="bg-amazon hover:bg-amazon-dark text-gray-900 font-semibold px-5 py-2.5 rounded-lg transition">
+        Scan Amazon Now
+      </button>
+    </div>
+    {% endif %}
+  </section>
+
+</main>
+
+<!-- ═══════════════════ SCAN DRAWER (slides in from right) ═══════════════════ -->
+<div x-show="drawerOpen" class="fixed inset-0 z-50 flex" x-transition.opacity>
+  <!-- overlay -->
+  <div class="flex-1 bg-black/40 backdrop-blur-sm" @click="closeDrawer()"></div>
+
+  <!-- panel -->
+  <div class="w-full max-w-md bg-white shadow-2xl flex flex-col"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="translate-x-full"
+       x-transition:enter-end="translate-x-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="translate-x-0"
+       x-transition:leave-end="translate-x-full">
+
+    <!-- header -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-900 text-white">
+      <h2 class="font-semibold">Scan Amazon Account</h2>
+      <button @click="closeDrawer()" class="text-gray-400 hover:text-white transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- body -->
+    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+
+      <!-- Credentials form -->
+      <div x-show="scanState === 'idle'" class="space-y-4">
+        <p class="text-sm text-gray-500">
+          Enter your Amazon credentials below. They are sent only to the local server
+          and never stored in the app beyond this session (use <code class="bg-gray-100 px-1 rounded">.env</code> to persist them).
+        </p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Amazon Email</label>
+          <input type="email" x-model="creds.email"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amazon"
+                 placeholder="you@example.com" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" x-model="creds.password"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amazon"
+                 placeholder="••••••••" />
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="headlessToggle" x-model="creds.headless" class="rounded" />
+          <label for="headlessToggle" class="text-sm text-gray-600">
+            Run headlessly (no visible browser window)
+          </label>
+        </div>
+        <div x-show="scanError" class="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg" x-text="scanError"></div>
+        <button @click="startScan()"
+                :disabled="!creds.email || !creds.password"
+                class="w-full bg-amazon hover:bg-amazon-dark disabled:opacity-40 text-gray-900 font-semibold py-2.5 rounded-lg transition">
+          Start Scan
+        </button>
+      </div>
+
+      <!-- Running / OTP -->
+      <div x-show="scanState === 'running'" class="space-y-4">
+        <div class="flex items-center gap-3">
+          <svg class="w-6 h-6 text-amazon animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span class="text-sm font-medium text-gray-700" x-text="statusMessage || 'Scanning…'"></span>
+        </div>
+
+        <!-- OTP input -->
+        <div x-show="otpRequired" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 space-y-3 fade-in">
+          <p class="text-sm font-medium text-yellow-800" x-text="otpPrompt"></p>
+          <input type="text" x-model="otpValue" maxlength="10"
+                 class="w-full border border-yellow-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 tracking-widest font-mono"
+                 placeholder="123456" @keydown.enter="submitOtp()" />
+          <button @click="submitOtp()"
+                  :disabled="!otpValue"
+                  class="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-white font-semibold py-2 rounded-lg transition text-sm">
+            Submit OTP
+          </button>
+        </div>
+
+        <!-- Progress log -->
+        <div class="sse-log bg-gray-900 text-green-400 rounded-lg p-3 text-xs space-y-0.5">
+          <template x-for="line in logLines" :key="line">
+            <div x-text="'› ' + line"></div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Done -->
+      <div x-show="scanState === 'done'" class="text-center space-y-4 fade-in py-6">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <p class="font-semibold text-gray-800" x-text="statusMessage"></p>
+        <button @click="reloadPage()" class="bg-amazon hover:bg-amazon-dark text-gray-900 font-semibold px-6 py-2.5 rounded-lg transition">
+          View Results
+        </button>
+      </div>
+
+      <!-- Error -->
+      <div x-show="scanState === 'error'" class="text-center space-y-4 fade-in py-6">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </div>
+        <p class="font-semibold text-gray-800">Scan Failed</p>
+        <p class="text-sm text-red-600" x-text="statusMessage"></p>
+        <button @click="resetScan()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-5 py-2 rounded-lg transition text-sm">
+          Try Again
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ALPINE APP ═══════════════════ -->
+<script>
+function app() {
+  return {
+    drawerOpen: false,
+    filter: '',
+    scanState: 'idle',   // idle | running | done | error
+    statusMessage: '',
+    scanError: '',
+    otpRequired: false,
+    otpPrompt: '',
+    otpValue: '',
+    logLines: [],
+    creds: {
+      email:    '{{ saved_email }}',
+      password: '',
+      headless: true,
+    },
+    _es: null,
+
+    init() {
+      // Apply filter whenever it changes
+      this.$watch('filter', v => this.applyFilter(v));
+
+      // If a scan was running when the page loaded, reconnect to SSE
+      if ({{ 'true' if scanning else 'false' }}) {
+        this.scanState = 'running';
+        this.drawerOpen = true;
+        this.connectSSE();
+      }
+    },
+
+    openScanDrawer() {
+      this.drawerOpen = true;
+    },
+
+    closeDrawer() {
+      if (this.scanState === 'running') return; // don't close mid-scan
+      this.drawerOpen = false;
+    },
+
+    async startScan() {
+      this.scanError = '';
+      this.logLines = [];
+      const res = await fetch('/api/scan/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.creds),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        this.scanError = data.error || 'Failed to start scan';
+        return;
+      }
+      this.scanState = 'running';
+      this.statusMessage = 'Starting…';
+      this.connectSSE();
+    },
+
+    connectSSE() {
+      if (this._es) this._es.close();
+      this._es = new EventSource('/api/scan/events');
+
+      this._es.addEventListener('status', e => {
+        const d = JSON.parse(e.data);
+        this.statusMessage = d.message;
+        this.logLines.push(d.message);
+        if (this.logLines.length > 50) this.logLines.shift();
+      });
+
+      this._es.addEventListener('otp_required', e => {
+        const d = JSON.parse(e.data);
+        this.otpRequired = true;
+        this.otpPrompt = d.prompt || 'Enter your Amazon OTP:';
+        this.otpValue = '';
+      });
+
+      this._es.addEventListener('done', e => {
+        const d = JSON.parse(e.data);
+        this.scanState = 'done';
+        this.statusMessage = d.message || `Scan complete — ${d.count} record(s) found.`;
+        this.otpRequired = false;
+        this._es.close();
+      });
+
+      this._es.addEventListener('error', e => {
+        try {
+          const d = JSON.parse(e.data);
+          this.statusMessage = d.message || 'An error occurred.';
+        } catch { this.statusMessage = 'Connection error.'; }
+        this.scanState = 'error';
+        this._es.close();
+      });
+
+      this._es.addEventListener('heartbeat', () => {});
+    },
+
+    async submitOtp() {
+      const res = await fetch('/api/scan/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: this.otpValue }),
+      });
+      const d = await res.json();
+      if (d.ok) this.otpRequired = false;
+    },
+
+    reloadPage() {
+      window.location.reload();
+    },
+
+    resetScan() {
+      this.scanState = 'idle';
+      this.statusMessage = '';
+      this.logLines = [];
+      this.otpRequired = false;
+    },
+
+    applyFilter(val) {
+      document.querySelectorAll('#returns-tbody tr').forEach(row => {
+        const status = row.dataset.status || '';
+        const fees   = parseFloat(row.dataset.fees || '0');
+        let show = true;
+        if (val === 'pending') show = /pending|processing|awaiting|requested|received/.test(status);
+        else if (val === 'refunded') show = status.includes('refund') && !/pending|processing|awaiting/.test(status);
+        else if (val === 'fees') show = fees > 0;
+        row.style.display = show ? '' : 'none';
+      });
+    },
+  };
+}
+</script>
+</body>
+</html>
